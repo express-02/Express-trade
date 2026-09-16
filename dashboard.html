@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Express Trade • Dashboard</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<style>
+  body{height:100vh;overflow:hidden;}
+  .app{display:grid;grid-template-columns:1fr 300px;height:100vh;width:100%;}
+
+  .main{padding:28px 34px;overflow-y:auto;min-width:0;}
+  .topline{display:flex;justify-content:space-between;align-items:flex-start;margin:0 0 6px;gap:12px;flex-wrap:wrap;}
+  .brand-row{display:flex;align-items:center;gap:10px;}
+  .brand-mark{width:32px;height:32px;border-radius:9px;background:linear-gradient(160deg,var(--copper),var(--copper-dim));display:flex;align-items:center;justify-content:center;font-family:'Fraunces',serif;font-weight:600;font-size:.95rem;color:#0a0d12;}
+  .brand-row span{font-family:'Fraunces',serif;font-size:1.05rem;}
+  .head-right{display:flex;align-items:center;gap:14px;}
+  .greeting{font-size:.82rem;color:var(--text-faint);}
+  .greeting strong{color:var(--text);}
+  .logout-btn{background:#251616;border:1px solid #4a2a28;color:var(--rose);padding:7px 14px;border-radius:20px;font-size:.75rem;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:6px;}
+  .logout-btn:hover{background:#331d1c;}
+
+  .hero{display:flex;align-items:baseline;gap:10px;margin:20px 0 4px;font-family:'Fraunces',serif;flex-wrap:wrap;}
+  .hero .cur{font-size:1.6rem;color:var(--text-dim);font-weight:400;}
+  .hero .amt{font-size:3.2rem;font-weight:500;letter-spacing:-1px;}
+  .hero .delta{font-family:'Inter',sans-serif;font-size:.9rem;font-weight:600;padding:5px 10px;border-radius:7px;}
+  .delta.up{background:#122420;color:var(--teal);}
+  .delta.down{background:#251616;color:var(--rose);}
+  .hero-sub{color:var(--text-faint);font-size:.85rem;margin-bottom:26px;}
+
+  .action-row{display:flex;gap:10px;margin-bottom:30px;flex-wrap:wrap;}
+  .action{flex:1 1 160px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px;cursor:pointer;display:flex;align-items:center;gap:12px;transition:.15s;text-decoration:none;color:var(--text);}
+  .action:hover{border-color:var(--copper-dim);background:var(--panel-2);}
+  .action i{font-size:1.05rem;color:var(--copper);width:20px;text-align:center;}
+  .action span{font-size:.85rem;font-weight:500;}
+
+  .panel-title{display:flex;justify-content:space-between;align-items:baseline;margin:26px 0 12px;flex-wrap:wrap;gap:6px;}
+  .panel-title h3{font-size:1.15rem;}
+  .panel-title span{font-size:.75rem;color:var(--text-faint);}
+
+  .chart-wrap{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px;margin-bottom:28px;}
+  #priceChart{width:100%;height:180px;display:block;}
+
+  .asset-name-cell{display:flex;align-items:center;gap:10px;}
+  .asset-glyph{width:32px;height:32px;border-radius:9px;background:var(--panel-2);display:flex;align-items:center;justify-content:center;color:var(--copper);border:1px solid var(--line);font-size:.85rem;flex:none;}
+  .asset-sub{color:var(--text-faint);font-size:.72rem;}
+  .chg{font-weight:600;padding:3px 9px;border-radius:6px;font-size:.78rem;}
+  .chg.up{color:var(--teal);background:#0f2420;}
+  .chg.down{color:var(--rose);background:#251515;}
+
+  .side{background:var(--panel);border-left:1px solid var(--line);padding:26px 22px;overflow-y:auto;min-width:0;}
+  .kpi{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid #1a1f29;gap:8px;}
+  .kpi:last-child{border-bottom:none;}
+  .kpi .k-label{font-size:.78rem;color:var(--text-faint);}
+  .kpi .k-val{font-size:.9rem;font-weight:600;text-align:right;}
+  .kpi .k-val.copper{color:var(--copper);}
+
+  .log-item{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid #1a1f29;font-size:.78rem;gap:10px;}
+  .log-item:last-child{border-bottom:none;}
+  .log-item .l-what{color:var(--text-dim);}
+  .log-item .l-when{color:var(--text-faint);white-space:nowrap;}
+
+  @media (max-width:900px){
+    .app{grid-template-columns:1fr;}
+    .side{display:none;}
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <div class="main">
+    <div class="topline">
+      <div class="brand-row"><div class="brand-mark">E</div><span>Express Trade</span></div>
+      <div class="head-right">
+        <span class="greeting">Welcome back, <strong id="userNameDisplay">Trader</strong></span>
+        <button class="logout-btn" id="logoutBtn"><i class="fas fa-arrow-right-from-bracket"></i> Logout</button>
+      </div>
+    </div>
+
+    <div class="hero">
+      <span class="cur">$</span>
+      <span class="amt" id="mainBalance">0.00</span>
+      <span class="delta up" id="deltaBadge">+0.00%</span>
+    </div>
+    <div class="hero-sub">Portfolio value · updates live from the market feed</div>
+
+    <div class="action-row">
+      <a href="deposit.html" class="action"><i class="fas fa-arrow-down"></i><span>Add funds</span></a>
+      <a href="withdraw.html" class="action"><i class="fas fa-arrow-up"></i><span>Withdraw</span></a>
+      <div class="action" id="tradeBtn"><i class="fas fa-repeat"></i><span>Trade</span></div>
+    </div>
+
+    <div class="panel-title"><h3>BTC/USDT</h3><span id="feedLabel">Live market feed</span></div>
+    <div class="chart-wrap"><canvas id="priceChart"></canvas></div>
+
+    <div class="panel-title"><h3>Holdings</h3><span>Portfolio</span></div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Asset</th><th>Price</th><th>24h</th><th>Holding value</th></tr></thead>
+        <tbody id="assetBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="side">
+    <h4>Account summary</h4>
+    <div class="kpi"><span class="k-label">Status</span><span class="badge approved">Active</span></div>
+    <div class="kpi"><span class="k-label">Available to withdraw</span><span class="k-val" id="availBalance">$0.00</span></div>
+    <div class="kpi"><span class="k-label">BTC held</span><span class="k-val" id="btcHeld">0.0000</span></div>
+
+    <h4 style="margin-top:30px;">Recent activity</h4>
+    <div id="activityLog"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+  const USERS_KEY = 'ledgerlineUsers';
+  const SESSION_KEY = 'ledgerlineSession';
+
+  function getUsers(){ return JSON.parse(localStorage.getItem(USERS_KEY)) || []; }
+  function saveUsers(u){ localStorage.setItem(USERS_KEY, JSON.stringify(u)); }
+  function getSession(){ return JSON.parse(localStorage.getItem(SESSION_KEY)); }
+  function saveSession(u){ localStorage.setItem(SESSION_KEY, JSON.stringify(u)); }
+
+  let session = getSession();
+  if(!session || session.status !== 'approved'){
+    window.location.href = 'index.html';
+    return;
+  }
+
+  let users = getUsers();
+  let user = users.find(u => u.email === session.email) || session;
+  user.balance = user.balance ?? 0;
+  user.btc = user.btc ?? 0;
+
+  function persist(){
+    users = getUsers();
+    const idx = users.findIndex(u => u.email === user.email);
+    if(idx > -1) users[idx] = user; else users.push(user);
+    saveUsers(users);
+    saveSession(user);
+  }
+
+  document.getElementById('userNameDisplay').textContent = user.name || 'Trader';
+
+  const toastEl = document.getElementById('toast');
+  function toast(msg){
+    toastEl.textContent = msg;
+    toastEl.style.display = 'block';
+    clearTimeout(toastEl._t);
+    toastEl._t = setTimeout(()=>toastEl.style.display='none', 2600);
+  }
+
+  // ---- live market data (Binance public API) ----
+  const SYMBOLS = ['BTCUSDT','ETHUSDT','SOLUSDT'];
+  const prices = {BTCUSDT:0, ETHUSDT:0, SOLUSDT:0};
+  const changes24h = {BTCUSDT:0, ETHUSDT:0, SOLUSDT:0};
+  let btcHistory = [];
+
+  async function fetchPrices(){
+    try{
+      const url = 'https://api.binance.com/api/v3/ticker/24hr?symbols=' + encodeURIComponent(JSON.stringify(SYMBOLS));
+      const res = await fetch(url);
+      const data = await res.json();
+      data.forEach(d=>{
+        prices[d.symbol] = parseFloat(d.lastPrice);
+        changes24h[d.symbol] = parseFloat(d.priceChangePercent);
+      });
+      renderAssets();
+      renderBalance();
+    }catch(e){ /* keep last known */ }
+  }
+
+  async function fetchChart(){
+    try{
+      const res = await fetch('https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=5m&limit=60');
+      const data = await res.json();
+      btcHistory = data.map(k => parseFloat(k[4]));
+      drawChart();
+    }catch(e){ /* keep last chart */ }
+  }
+
+  const canvas = document.getElementById('priceChart');
+  const ctx = canvas.getContext('2d');
+  function resizeCanvas(){
+    canvas.width = canvas.clientWidth * devicePixelRatio;
+    canvas.height = canvas.clientHeight * devicePixelRatio;
+  }
+  function drawChart(){
+    resizeCanvas();
+    const w = canvas.width, h = canvas.height;
+    ctx.clearRect(0,0,w,h);
+    const data = btcHistory.length ? btcHistory : [0, 0];
+    const min = Math.min(...data), max = Math.max(...data);
+    const pad = 10 * devicePixelRatio;
+    ctx.beginPath();
+    data.forEach((p,i)=>{
+      const x = pad + (i/(data.length-1 || 1)) * (w - pad*2);
+      const y = h - pad - ((p-min)/((max-min) || 1)) * (h - pad*2);
+      i===0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y);
+    });
+    ctx.strokeStyle = '#22c55e';
+    ctx.lineWidth = 2 * devicePixelRatio;
+    ctx.stroke();
+    ctx.lineTo(w-pad, h);
+    ctx.lineTo(pad, h);
+    ctx.closePath();
+    const grad = ctx.createLinearGradient(0,0,0,h);
+    grad.addColorStop(0,'rgba(34,197,94,0.25)');
+    grad.addColorStop(1,'rgba(34,197,94,0)');
+    ctx.fillStyle = grad;
+    ctx.fill();
+  }
+
+  const assets = [
+    {name:'Bitcoin', sym:'BTC', pair:'BTCUSDT', glyph:'₿'},
+    {name:'Ethereum', sym:'ETH', pair:'ETHUSDT', glyph:'Ξ'},
+    {name:'Solana', sym:'SOL', pair:'SOLUSDT', glyph:'◎'}
+  ];
+  const assetBody = document.getElementById('assetBody');
+
+  function fmt(n){ return n.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2}); }
+
+  function renderAssets(){
+    assetBody.innerHTML = '';
+    assets.forEach(a=>{
+      const p = prices[a.pair] || 0;
+      const chg = changes24h[a.pair] || 0;
+      const up = chg >= 0;
+      const holdingValue = a.sym==='BTC' ? (user.btc * p) : 0;
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td><div class="asset-name-cell">
+          <div class="asset-glyph">${a.glyph}</div>
+          <div><div>${a.name}</div><div class="asset-sub">${a.sym}</div></div>
+        </div></td>
+        <td>$${fmt(p)}</td>
+        <td><span class="chg ${up?'up':'down'}">${up?'+':''}${chg.toFixed(2)}%</span></td>
+        <td>$${fmt(holdingValue)}</td>
+      `;
+      assetBody.appendChild(tr);
+    });
+  }
+
+  let startBalance = null;
+  function renderBalance(){
+    const btcPrice = prices.BTCUSDT || 0;
+    const total = (user.balance || 0) + user.btc * btcPrice;
+    if(startBalance === null) startBalance = total || 1;
+    document.getElementById('mainBalance').textContent = fmt(total);
+    document.getElementById('availBalance').textContent = '$' + fmt(user.balance || 0);
+    document.getElementById('btcHeld').textContent = (user.btc || 0).toFixed(4);
+    const deltaPct = startBalance ? ((total-startBalance)/startBalance*100) : 0;
+    const badge = document.getElementById('deltaBadge');
+    badge.textContent = (deltaPct>=0?'+':'') + deltaPct.toFixed(2) + '%';
+    badge.className = 'delta ' + (deltaPct>=0?'up':'down');
+  }
+
+  function pushLog(text){
+    const log = document.getElementById('activityLog');
+    const item = document.createElement('div');
+    item.className = 'log-item';
+    item.innerHTML = `<span class="l-what">${text}</span><span class="l-when">${new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}</span>`;
+    log.prepend(item);
+    while(log.children.length > 6) log.removeChild(log.lastChild);
+  }
+
+  document.getElementById('tradeBtn').addEventListener('click', ()=>{
+    const spend = 100;
+    if((user.balance || 0) < spend){
+      toast('❌ Not enough balance to place a trade');
+      return;
+    }
+    const btcPrice = prices.BTCUSDT;
+    if(!btcPrice){ toast('⏳ Waiting on live price…'); return; }
+    const btcBought = spend / btcPrice;
+    user.balance -= spend;
+    user.btc += btcBought;
+    persist(); renderBalance(); renderAssets();
+    pushLog(`Bought ${btcBought.toFixed(5)} BTC`);
+    toast('📈 Buy: ' + btcBought.toFixed(5) + ' BTC');
+  });
+
+  document.getElementById('logoutBtn').addEventListener('click', ()=>{
+    localStorage.removeItem(SESSION_KEY);
+    toast('👋 Signed out');
+    setTimeout(()=> window.location.href = 'index.html', 800);
+  });
+
+  window.addEventListener('resize', drawChart);
+
+  // initial load + polling
+  fetchPrices();
+  fetchChart();
+  pushLog('Session started');
+  renderAssets();
+  renderBalance();
+  setInterval(fetchPrices, 8000);   // live prices
+  setInterval(fetchChart, 60000);   // chart every 60s
+})();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Withdraw • Express Trade</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<style>
+  .shell{max-width:520px;margin:0 auto;}
+  .icon-big{font-size:2.4rem;color:var(--copper);margin-bottom:14px;}
+  .avail{background:var(--panel-2);border:1px solid var(--line);border-radius:10px;padding:14px 18px;display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;font-size:.9rem;}
+  .avail strong{font-family:'Fraunces',serif;font-size:1.2rem;}
+  .method-toggle{display:flex;gap:6px;background:var(--panel);border:1px solid var(--line);border-radius:11px;padding:5px;margin-bottom:16px;}
+  .method-toggle button{flex:1;padding:10px;border:none;border-radius:8px;background:transparent;color:var(--text-faint);font-weight:600;font-size:.82rem;cursor:pointer;transition:.15s;}
+  .method-toggle button.active{background:var(--copper);color:#0a0d12;}
+  .status-row{display:flex;align-items:center;gap:10px;font-size:.82rem;color:var(--text-faint);margin-top:16px;}
+  .status-row.done{color:var(--teal);}
+  .note-text{font-size:.78rem;color:var(--text-faint);margin-top:16px;line-height:1.6;}
+  .hidden{display:none !important;}
+  .pending-box{text-align:center;padding:22px 0;}
+  .pending-box i{font-size:2.6rem;color:var(--copper);margin-bottom:12px;display:block;}
+  .pending-box h3{font-family:'Fraunces',serif;font-size:1.3rem;margin-bottom:8px;}
+  .pending-box p{color:var(--text-faint);font-size:.85rem;line-height:1.6;}
+  .field select{
+    width:100%;padding:12px 14px;background:var(--panel);border:1px solid var(--line);
+    border-radius:9px;color:var(--text);font-size:.9rem;outline:none;
+  }
+  .field select:focus{border-color:var(--copper-dim);}
+</style>
+</head>
+<body>
+<div class="shell">
+  <div style="width:100%;">
+    <a href="dashboard.html" class="back-link"><i class="fas fa-arrow-left"></i> Back to dashboard</a>
+    <div class="card">
+      <div class="icon-big"><i class="fas fa-arrow-up-from-bracket"></i></div>
+      <h2>Withdraw funds</h2>
+
+      <!-- FORM -->
+      <div id="formStep">
+        <p style="color:var(--text-faint);font-size:.9rem;margin:8px 0 20px;">
+          Submit a withdrawal request. Your balance will be updated once your request has been reviewed.
+        </p>
+
+        <div class="avail">
+          <span>Available balance</span>
+          <strong id="availAmt">$0.00</strong>
+        </div>
+
+        <div class="field">
+          <label>Amount to withdraw (USD)</label>
+          <input type="number" id="withdrawAmt" placeholder="e.g. 200" min="1" />
+        </div>
+
+        <div class="field">
+          <label>Withdrawal method</label>
+          <div class="method-toggle" id="methodToggle">
+            <button class="active" data-method="crypto">Crypto transfer</button>
+            <button data-method="bank">Bank transfer</button>
+          </div>
+        </div>
+
+        <!-- CRYPTO fields -->
+        <div id="cryptoFields">
+          <div class="field">
+            <label>Crypto</label>
+            <select id="cryptoNetwork">
+              <option value="BTC">Bitcoin (BTC)</option>
+              <option value="USDT-TRC20">USDT (TRC20)</option>
+              <option value="USDT-ERC20">USDT (ERC20)</option>
+              <option value="ETH">Ethereum (ETH)</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Wallet address</label>
+            <input type="text" id="cryptoAddress" placeholder="Paste your wallet address" />
+          </div>
+        </div>
+
+        <!-- BANK fields -->
+        <div id="bankFields" class="hidden">
+          <div class="field"><label>Bank name</label><input type="text" id="bankName" placeholder="e.g. Access Bank" /></div>
+          <div class="field"><label>Account holder name</label><input type="text" id="bankHolder" placeholder="Full name on account" /></div>
+          <div class="field"><label>Account number</label><input type="text" id="bankNumber" placeholder="0123456789" /></div>
+        </div>
+
+        <button class="btn btn-primary btn-block" id="requestBtn"><i class="fas fa-paper-plane"></i> Submit withdrawal request</button>
+
+        <div class="note-text">
+          <i class="fas fa-shield-alt"></i> Withdrawals are reviewed and processed by an administrator. You'll see the status below.
+        </div>
+      </div>
+
+      <!-- PENDING -->
+      <div id="pendingStep" class="hidden">
+        <div class="pending-box">
+          <i class="fas fa-clock"></i>
+          <h3>Pending</h3>
+          <p>Your withdrawal request has been submitted and is awaiting admin approval.<br>You'll be notified once it has been processed.</p>
+          <a href="dashboard.html" class="btn btn-primary btn-block" style="margin-top:18px;"><i class="fas fa-arrow-left"></i> Back to dashboard</a>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+  const SESSION_KEY = 'ledgerlineSession';
+  const USERS_KEY = 'ledgerlineUsers';
+  const REQUESTS_KEY = 'ledgerlineWithdrawRequests';
+
+  let session = JSON.parse(localStorage.getItem(SESSION_KEY));
+  if(!session || session.status !== 'approved'){ window.location.href = 'index.html'; return; }
+
+  function refreshBalance(){
+    const users = JSON.parse(localStorage.getItem(USERS_KEY)) || [];
+    const u = users.find(u => u.email === session.email);
+    if(u) session = u;
+    document.getElementById('availAmt').textContent = '$' + (session.balance || 0).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
+  }
+  refreshBalance();
+
+  const toastEl = document.getElementById('toast');
+  function toast(msg){
+    toastEl.textContent = msg;
+    toastEl.style.display = 'block';
+    setTimeout(()=>toastEl.style.display='none', 2600);
+  }
+
+  let method = 'crypto';
+  const toggle = document.getElementById('methodToggle');
+  const cryptoFields = document.getElementById('cryptoFields');
+  const bankFields = document.getElementById('bankFields');
+  toggle.addEventListener('click', (e)=>{
+    const btn = e.target.closest('button[data-method]');
+    if(!btn) return;
+    method = btn.dataset.method;
+    toggle.querySelectorAll('button').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    if(method === 'crypto'){ cryptoFields.classList.remove('hidden'); bankFields.classList.add('hidden'); }
+    else { cryptoFields.classList.add('hidden'); bankFields.classList.remove('hidden'); }
+  });
+
+  document.getElementById('requestBtn').addEventListener('click', ()=>{
+    const amt = Number(document.getElementById('withdrawAmt').value);
+    if(!amt || amt <= 0){ toast('❌ Enter a valid amount.'); return; }
+    if(amt > (session.balance || 0)){ toast('❌ Amount exceeds your available balance.'); return; }
+
+    const details = { method };
+    if(method === 'crypto'){
+      const addr = document.getElementById('cryptoAddress').value.trim();
+      const net = document.getElementById('cryptoNetwork').value;
+      if(!addr){ toast('❌ Enter your wallet address.'); return; }
+      details.network = net;
+      details.address = addr;
+    } else {
+      const bank = document.getElementById('bankName').value.trim();
+      const holder = document.getElementById('bankHolder').value.trim();
+      const num = document.getElementById('bankNumber').value.trim();
+      if(!bank || !holder || !num){ toast('❌ Please fill in all bank details.'); return; }
+      details.bank = bank;
+      details.holder = holder;
+      details.accountNumber = num;
+    }
+
+    const requests = JSON.parse(localStorage.getItem(REQUESTS_KEY)) || [];
+    requests.push({
+      id: Date.now(),
+      email: session.email,
+      name: session.name,
+      amount: amt,
+      details,
+      status: 'pending',
+      requestedAt: new Date().toISOString()
+    });
+    localStorage.setItem(REQUESTS_KEY, JSON.stringify(requests));
+
+    document.getElementById('formStep').classList.add('hidden');
+    document.getElementById('pendingStep').classList.remove('hidden');
+  });
+})();
+</script>
+
+</body>
+</html>

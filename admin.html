@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Express Trade • Admin</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<style>
+  .wrap{max-width:1080px;margin:0 auto;padding:34px 24px;}
+  .header-row{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:22px;}
+  .header-row h2{font-size:1.7rem;display:flex;align-items:center;gap:10px;}
+  .header-row h2 i{background:var(--panel-2);padding:9px 12px;border-radius:10px;color:var(--copper);font-size:1.1rem;}
+
+  .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:28px;}
+  .stat{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px;display:flex;align-items:center;gap:14px;}
+  .stat i{width:44px;height:44px;border-radius:10px;background:var(--panel-2);display:flex;align-items:center;justify-content:center;color:var(--copper);font-size:1.2rem;flex:none;}
+  .stat .s-label{font-size:.72rem;color:var(--text-faint);text-transform:uppercase;letter-spacing:.4px;}
+  .stat .s-val{font-family:'Fraunces',serif;font-size:1.5rem;}
+
+  .section-title{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:10px;}
+
+  .user-cell{display:flex;align-items:center;gap:10px;}
+  .avatar{width:34px;height:34px;border-radius:9px;background:var(--panel-2);display:flex;align-items:center;justify-content:center;color:var(--copper);border:1px solid var(--line);font-size:.8rem;flex:none;}
+  .u-email{font-size:.72rem;color:var(--text-faint);}
+  .row-actions{display:flex;gap:6px;flex-wrap:wrap;}
+  .row-actions button{
+    border:1px solid var(--line);background:var(--panel-2);color:var(--text-dim);
+    padding:5px 11px;border-radius:20px;font-size:.7rem;font-weight:600;cursor:pointer;
+    display:inline-flex;align-items:center;gap:5px;transition:.15s;
+  }
+  .row-actions button.approve{background:#0f2420;border-color:#1e4a3f;color:var(--teal);}
+  .row-actions button.block{background:#251616;border-color:#4a2a28;color:var(--rose);}
+  .row-actions button.credit{background:#151d2b;border-color:#263a56;color:#7ea8d8;}
+  .row-actions button.debit{background:#251d15;border-color:#4a3a26;color:var(--copper);}
+
+  .empty-state{text-align:center;padding:44px 20px;color:var(--text-faint);}
+  .empty-state i{font-size:2.4rem;margin-bottom:12px;display:block;}
+
+  .legend{display:flex;justify-content:flex-end;gap:16px;font-size:.7rem;color:var(--text-faint);margin-top:16px;flex-wrap:wrap;}
+
+  /* ---- login gate ---- */
+  #loginGate{max-width:380px;margin:80px auto 0;}
+  #loginGate .icon-big{font-size:2.2rem;color:var(--copper);margin-bottom:12px;}
+  #loginGate h2{font-size:1.5rem;margin-bottom:4px;}
+  #loginGate .sub{color:var(--text-faint);font-size:.85rem;margin-bottom:22px;}
+  #loginError{margin-top:14px;padding:10px 14px;border-radius:9px;font-size:.82rem;font-weight:500;display:none;background:#251616;color:var(--rose);border:1px solid #4a2a28;}
+  .logout-pill{background:#251616;border:1px solid #4a2a28;color:var(--rose);padding:7px 14px;border-radius:20px;font-size:.75rem;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:6px;}
+  .logout-pill:hover{background:#331d1c;}
+
+  table{min-width:640px;}
+
+  @media (max-width:720px){
+    .wrap{padding:22px 14px;}
+    .header-row h2{font-size:1.3rem;}
+    .stats{grid-template-columns:1fr;}
+    .stat .s-val{font-size:1.3rem;word-break:break-word;}
+  }
+</style>
+</head>
+<body>
+
+<div id="loginGate" class="shell" style="min-height:100vh;">
+  <div style="width:100%;">
+    <div class="card">
+      <div class="icon-big"><i class="fas fa-shield-halved"></i></div>
+      <h2>Admin sign in</h2>
+      <p class="sub">Sign in with your Firebase admin account to open the control panel.</p>
+      <form id="loginForm">
+        <div class="field"><label>Email</label><input type="email" id="adminEmail" required /></div>
+        <div class="field"><label>Password</label><input type="password" id="adminPassword" required /></div>
+        <button type="submit" class="btn btn-primary btn-block" id="loginSubmitBtn"><i class="fas fa-lock-open"></i> Sign in</button>
+      </form>
+      <div id="loginError"></div>
+    </div>
+  </div>
+</div>
+
+<div class="wrap" id="adminPanel" style="display:none;">
+  <div class="header-row">
+    <h2><i class="fas fa-shield-halved"></i> Admin · Control panel</h2>
+    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+      <button class="logout-pill" id="adminLogoutBtn"><i class="fas fa-arrow-right-from-bracket"></i> Sign out</button>
+    </div>
+  </div>
+
+  <div class="stats">
+    <div class="stat"><i class="fas fa-users"></i><div><div class="s-label">Total users</div><div class="s-val" id="totalUsers">0</div></div></div>
+    <div class="stat"><i class="fas fa-hourglass-half"></i><div><div class="s-label">Pending approval</div><div class="s-val" id="pendingUsers">0</div></div></div>
+    <div class="stat"><i class="fas fa-euro-sign"></i><div><div class="s-label">Total balance</div><div class="s-val" id="totalBalance">$0</div></div></div>
+  </div>
+
+  <div class="section-title">
+    <h3 style="font-size:1.15rem;"><i class="fas fa-list-ul" style="color:var(--copper);margin-right:8px;"></i>User management</h3>
+    <button class="btn" id="refreshBtn"><i class="fas fa-arrows-rotate"></i> Refresh</button>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>User</th><th>Status</th><th>Balance</th><th>Actions</th></tr></thead>
+      <tbody id="userTableBody"></tbody>
+    </table>
+  </div>
+
+  <div class="legend">
+    <span><i class="fas fa-circle" style="color:var(--teal);"></i> Approve</span>
+    <span><i class="fas fa-circle" style="color:var(--rose);"></i> Block</span>
+    <span><i class="fas fa-circle" style="color:#7ea8d8;"></i> Add funds</span>
+    <span><i class="fas fa-circle" style="color:var(--copper);"></i> Remove funds</span>
+  </div>
+
+  <div class="section-title" style="margin-top:34px;">
+    <h3 style="font-size:1.15rem;"><i class="fas fa-arrow-down" style="color:var(--copper);margin-right:8px;"></i>Deposit requests</h3>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>User</th><th>Amount</th><th>Wallet / Method</th><th>Requested</th><th>Status</th><th>Actions</th></tr></thead>
+      <tbody id="depositTableBody"></tbody>
+    </table>
+  </div>
+
+  <div class="section-title" style="margin-top:34px;">
+    <h3 style="font-size:1.15rem;"><i class="fas fa-arrow-up" style="color:var(--copper);margin-right:8px;"></i>Withdrawal requests</h3>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>User</th><th>Amount</th><th>Method</th><th>Requested</th><th>Status</th><th>Actions</th></tr></thead>
+      <tbody id="requestTableBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- ===== Firebase ===== -->
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
+<script>
+  // TODO: replace with your Firebase project's config (Project settings → General → Your apps → SDK setup)
+  const firebaseConfig = {
+    apiKey: "AIzaSyAueqbCcGN_LKDTd6YnPkPcWSIufFqsqwM",
+    authDomain: "fedex-4bdba.firebaseapp.com",
+    projectId: "fedex-4bdba"
+  };
+  firebase.initializeApp(firebaseConfig);
+  const auth = firebase.auth();
+</script>
+
+<script>
+(function(){
+  const loginGate = document.getElementById('loginGate');
+  const adminPanel = document.getElementById('adminPanel');
+  const loginForm = document.getElementById('loginForm');
+  const loginError = document.getElementById('loginError');
+  const loginSubmitBtn = document.getElementById('loginSubmitBtn');
+
+  function showLoginError(msg){
+    loginError.textContent = msg;
+    loginError.style.display = 'block';
+  }
+
+  loginForm.addEventListener('submit', function(e){
+    e.preventDefault();
+    loginError.style.display = 'none';
+    loginSubmitBtn.disabled = true;
+    loginSubmitBtn.textContent = 'Signing in…';
+
+    const email = document.getElementById('adminEmail').value.trim();
+    const password = document.getElementById('adminPassword').value;
+
+    auth.signInWithEmailAndPassword(email, password)
+      .catch(function(err){
+        showLoginError(err.code === 'auth/invalid-credential' || err.code === 'auth/wrong-password' || err.code === 'auth/user-not-found'
+          ? 'Incorrect email or password.'
+          : 'Sign-in failed: ' + err.message);
+      })
+      .finally(function(){
+        loginSubmitBtn.disabled = false;
+        loginSubmitBtn.innerHTML = '<i class="fas fa-lock-open"></i> Sign in';
+      });
+  });
+
+  document.getElementById('adminLogoutBtn').addEventListener('click', function(){
+    auth.signOut();
+  });
+
+  auth.onAuthStateChanged(function(user){
+    if(user){
+      loginGate.style.display = 'none';
+      adminPanel.style.display = 'block';
+      window.initAdminPanel && window.initAdminPanel();
+    } else {
+      loginGate.style.display = 'flex';
+      adminPanel.style.display = 'none';
+    }
+  });
+})();
+</script>
+
+<script>
+window.initAdminPanel = function(){
+  if(window._adminPanelStarted) { window._refreshAdminPanel(); return; }
+  window._adminPanelStarted = true;
+
+  const USERS_KEY = 'ledgerlineUsers';
+  const SESSION_KEY = 'ledgerlineSession';
+  const REQUESTS_KEY = 'ledgerlineWithdrawRequests';
+  const DEPOSITS_KEY = 'ledgerlineDepositRequests';
+
+  const tbody = document.getElementById('userTableBody');
+  const reqTbody = document.getElementById('requestTableBody');
+  const depTbody = document.getElementById('depositTableBody');
+  const toastEl = document.getElementById('toast');
+  function toast(msg){
+    toastEl.textContent = msg;
+    toastEl.style.display = 'block';
+    setTimeout(()=>toastEl.style.display='none', 2600);
+  }
+
+  function getUsers(){ return JSON.parse(localStorage.getItem(USERS_KEY)) || []; }
+  function saveUsers(u){ localStorage.setItem(USERS_KEY, JSON.stringify(u)); }
+
+  function syncSessionIfCurrent(updatedUser){
+    const session = JSON.parse(localStorage.getItem(SESSION_KEY));
+    if(session && session.email === updatedUser.email){
+      localStorage.setItem(SESSION_KEY, JSON.stringify(updatedUser));
+    }
+  }
+
+  function updateStats(){
+    const users = getUsers();
+    document.getElementById('totalUsers').textContent = users.length;
+    document.getElementById('pendingUsers').textContent = users.filter(u=>u.status==='pending').length;
+    const totalBal = users.reduce((s,u)=> s + (u.balance||0), 0);
+    document.getElementById('totalBalance').textContent = '$' + totalBal.toLocaleString(undefined,{maximumFractionDigits:0});
+  }
+
+  function renderUsers(){
+    const users = getUsers();
+    tbody.innerHTML = '';
+
+    if(users.length === 0){
+      tbody.innerHTML = `<tr><td colspan="4"><div class="empty-state"><i class="fas fa-user-plus"></i><p>No users yet.</p><p style="font-size:.78rem;">They'll appear here after signing up.</p></div></td></tr>`;
+      updateStats();
+      return;
+    }
+
+    users.forEach(user=>{
+      const status = user.status || 'pending';
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td><div class="user-cell">
+          <div class="avatar"><i class="fas fa-user"></i></div>
+          <div><div>${user.name || 'Unknown'}</div><div class="u-email">${user.email}</div></div>
+        </div></td>
+        <td><span class="badge ${status}">${status.charAt(0).toUpperCase()+status.slice(1)}</span></td>
+        <td>$${(user.balance||0).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}</td>
+        <td><div class="row-actions">
+          ${status !== 'approved' ? `<button class="approve" data-email="${user.email}" data-act="approve"><i class="fas fa-check"></i> Approve</button>` : ''}
+          ${status !== 'blocked' ? `<button class="block" data-email="${user.email}" data-act="block"><i class="fas fa-ban"></i> Block</button>` : ''}
+          <button class="credit" data-email="${user.email}" data-act="credit"><i class="fas fa-plus"></i> Add funds</button>
+          <button class="debit" data-email="${user.email}" data-act="debit"><i class="fas fa-minus"></i> Remove funds</button>
+        </div></td>
+      `;
+      tbody.appendChild(tr);
+    });
+
+    updateStats();
+  }
+
+  function getRequests(){ return JSON.parse(localStorage.getItem(REQUESTS_KEY)) || []; }
+  function saveRequests(r){ localStorage.setItem(REQUESTS_KEY, JSON.stringify(r)); }
+
+  function renderRequests(){
+    const requests = getRequests().slice().reverse();
+    reqTbody.innerHTML = '';
+
+    if(requests.length === 0){
+      reqTbody.innerHTML = `<tr><td colspan="6"><div class="empty-state"><i class="fas fa-inbox"></i><p>No withdrawal requests yet.</p></div></td></tr>`;
+      return;
+    }
+
+    requests.forEach(r=>{
+      const tr = document.createElement('tr');
+      const status = r.status || 'pending';
+      const d = r.details || {};
+      let methodLabel = '—';
+      if(d.method === 'crypto') methodLabel = `${d.network || 'Crypto'} · ${d.address || ''}`;
+      else if(d.method === 'bank') methodLabel = `${d.bank || 'Bank'} · ${d.accountNumber || ''}`;
+      tr.innerHTML = `
+        <td><div class="user-cell"><div class="avatar"><i class="fas fa-user"></i></div>
+          <div><div>${r.name || 'Unknown'}</div><div class="u-email">${r.email}</div></div>
+        </div></td>
+        <td>$${Number(r.amount).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}</td>
+        <td class="u-email">${methodLabel}</td>
+        <td class="u-email">${new Date(r.requestedAt).toLocaleString()}</td>
+        <td><span class="badge ${status==='approved'?'approved':status==='declined'?'blocked':'pending'}">${status.charAt(0).toUpperCase()+status.slice(1)}</span></td>
+        <td><div class="row-actions">
+          ${status==='pending' ? `<button class="approve" data-id="${r.id}" data-act="approve-request"><i class="fas fa-check"></i> Approve</button>` : ''}
+          ${status==='pending' ? `<button class="block" data-id="${r.id}" data-act="decline-request"><i class="fas fa-xmark"></i> Decline</button>` : ''}
+        </div></td>
+      `;
+      reqTbody.appendChild(tr);
+    });
+  }
+
+  function getDeposits(){ return JSON.parse(localStorage.getItem(DEPOSITS_KEY)) || []; }
+  function saveDeposits(d){ localStorage.setItem(DEPOSITS_KEY, JSON.stringify(d)); }
+
+  function renderDeposits(){
+    const deposits = getDeposits().slice().reverse();
+    depTbody.innerHTML = '';
+
+    if(deposits.length === 0){
+      depTbody.innerHTML = `<tr><td colspan="6"><div class="empty-state"><i class="fas fa-inbox"></i><p>No deposit requests yet.</p></div></td></tr>`;
+      return;
+    }
+
+    deposits.forEach(d=>{
+      const tr = document.createElement('tr');
+      const status = d.status || 'pending';
+      tr.innerHTML = `
+        <td><div class="user-cell"><div class="avatar"><i class="fas fa-user"></i></div>
+          <div><div>${d.name || 'Unknown'}</div><div class="u-email">${d.email}</div></div>
+        </div></td>
+        <td>$${Number(d.amount).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}</td>
+        <td class="u-email">${d.method || 'BTC'} · ${d.wallet || ''}</td>
+        <td class="u-email">${new Date(d.requestedAt).toLocaleString()}</td>
+        <td><span class="badge ${status==='approved'?'approved':status==='declined'?'blocked':'pending'}">${status.charAt(0).toUpperCase()+status.slice(1)}</span></td>
+        <td><div class="row-actions">
+          ${status==='pending' ? `<button class="approve" data-id="${d.id}" data-act="approve-deposit"><i class="fas fa-check"></i> Approve</button>` : ''}
+          ${status==='pending' ? `<button class="block" data-id="${d.id}" data-act="decline-deposit"><i class="fas fa-xmark"></i> Decline</button>` : ''}
+        </div></td>
+      `;
+      depTbody.appendChild(tr);
+    });
+  }
+
+  document.addEventListener('click', function(e){
+    const btn = e.target.closest('button[data-act]');
+    if(!btn) return;
+    const act = btn.dataset.act;
+
+    // ---- deposit approve / decline ----
+    if(act === 'approve-deposit' || act === 'decline-deposit'){
+      const id = Number(btn.dataset.id);
+      const deposits = getDeposits();
+      const idx = deposits.findIndex(d=>d.id===id);
+      if(idx === -1){ toast('❌ Request not found.'); return; }
+      const dep = deposits[idx];
+
+      if(act === 'approve-deposit'){
+        const users = getUsers();
+        const uIdx = users.findIndex(u=>u.email===dep.email);
+        if(uIdx === -1){ toast('❌ User not found.'); return; }
+        users[uIdx].balance = (users[uIdx].balance||0) + Number(dep.amount);
+        saveUsers(users);
+        syncSessionIfCurrent(users[uIdx]);
+        dep.status = 'approved';
+        toast(`✅ Credited $${dep.amount} to ${dep.name}.`);
+        renderUsers();
+      } else {
+        dep.status = 'declined';
+        toast(`🚫 Declined deposit from ${dep.name}.`);
+      }
+      saveDeposits(deposits);
+      renderDeposits();
+      return;
+    }
+
+    // ---- withdrawal approve / decline ----
+    if(act === 'approve-request' || act === 'decline-request'){
+      const id = Number(btn.dataset.id);
+      const requests = getRequests();
+      const rIdx = requests.findIndex(r=>r.id===id);
+      if(rIdx === -1){ toast('❌ Request not found.'); return; }
+      const request = requests[rIdx];
+
+      if(act === 'approve-request'){
+        const users = getUsers();
+        const uIdx = users.findIndex(u=>u.email===request.email);
+        if(uIdx === -1 || (users[uIdx].balance||0) < request.amount){
+          toast('❌ User balance is no longer sufficient for this request.');
+          return;
+        }
+        users[uIdx].balance -= request.amount;
+        saveUsers(users);
+        syncSessionIfCurrent(users[uIdx]);
+        request.status = 'approved';
+        toast(`✅ Approved $${request.amount} withdrawal for ${request.name}.`);
+        renderUsers();
+      } else {
+        request.status = 'declined';
+        toast(`🚫 Declined withdrawal request from ${request.name}.`);
+      }
+
+      saveRequests(requests);
+      renderRequests();
+      return;
+    }
+
+    // ---- user row actions ----
+    const email = btn.dataset.email;
+    const users = getUsers();
+    const idx = users.findIndex(u=>u.email===email);
+    if(idx === -1){ toast('❌ User not found.'); return; }
+    const user = users[idx];
+
+    if(act === 'approve'){
+      user.status = 'approved';
+      toast(`✅ ${user.name} approved — they can now sign in.`);
+    } else if(act === 'block'){
+      user.status = 'blocked';
+      toast(`🚫 ${user.name} blocked.`);
+    } else if(act === 'credit'){
+      const amt = Number(prompt(`Add funds to ${user.name} (USD):`, '100'));
+      if(!amt || amt <= 0) return;
+      user.balance = (user.balance||0) + amt;
+      toast(`💰 Added $${amt} to ${user.name}.`);
+    } else if(act === 'debit'){
+      const amt = Number(prompt(`Remove funds from ${user.name} (USD):`, '50'));
+      if(!amt || amt <= 0) return;
+      user.balance = Math.max(0, (user.balance||0) - amt);
+      toast(`➖ Removed $${amt} from ${user.name}.`);
+    }
+
+    saveUsers(users);
+    syncSessionIfCurrent(user);
+    renderUsers();
+  });
+
+  document.getElementById('refreshBtn').addEventListener('click', ()=>{
+    renderUsers();
+    renderRequests();
+    renderDeposits();
+    toast('🔄 List refreshed');
+  });
+
+  window._refreshAdminPanel = function(){ renderUsers(); renderRequests(); renderDeposits(); };
+
+  renderUsers();
+  renderRequests();
+  renderDeposits();
+  setInterval(window._refreshAdminPanel, 15000);
+};
+</script>
+
+</body>
+</html>

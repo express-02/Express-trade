@@ -1,0 +1,110 @@
+/* ===========================================================
+   Ledgerline — shared demo-site design system
+   =========================================================== */
+:root{
+  --ink:#0a0d12;
+  --panel:#10141b;
+  --panel-2:#151a23;
+  --line:#232a37;
+  --copper:#f2c14e;
+  --copper-dim:#a8842f;
+  --teal:#4fb8a3;
+  --rose:#c1615a;
+  --text:#eef1f6;
+  --text-dim:#8892a3;
+  --text-faint:#5a6478;
+}
+*{margin:0;padding:0;box-sizing:border-box;min-width:0;}
+html,body{height:100%;}
+body{
+  font-family:'Inter',sans-serif;
+  background:var(--ink);
+  color:var(--text);
+}
+::-webkit-scrollbar{width:6px;height:6px;}
+::-webkit-scrollbar-thumb{background:#232a37;border-radius:6px;}
+
+h1,h2,h3,h4{font-family:'Fraunces',serif;font-weight:500;}
+
+.demo-strip{
+  display:flex;align-items:center;gap:10px;
+  background:#1a1610;border:1px solid #3a301c;
+  color:var(--copper);
+  font-size:.72rem;font-weight:600;letter-spacing:.3px;
+  padding:8px 14px;border-radius:8px;
+  width:fit-content;
+}
+
+/* ---- buttons / inputs ---- */
+.btn{
+  border:1px solid var(--line);
+  background:var(--panel-2);
+  color:var(--text);
+  padding:12px 20px;
+  border-radius:10px;
+  font-weight:600;
+  font-size:.85rem;
+  cursor:pointer;
+  transition:.15s;
+  display:inline-flex;align-items:center;gap:8px;
+}
+.btn:hover{border-color:var(--copper-dim);}
+.btn-primary{background:var(--copper);border-color:var(--copper);color:#0a0d12;}
+.btn-primary:hover{background:#f7d078;}
+.btn-danger{background:#251616;border-color:#4a2a28;color:var(--rose);}
+.btn-danger:hover{background:#331d1c;}
+.btn-block{width:100%;justify-content:center;}
+
+.field{margin-bottom:16px;}
+.field label{display:block;font-size:.78rem;color:var(--text-dim);margin-bottom:6px;}
+.field input{
+  width:100%;padding:12px 14px;
+  background:var(--panel);border:1px solid var(--line);
+  border-radius:9px;color:var(--text);font-size:.9rem;outline:none;
+  transition:.15s;
+}
+.field input:focus{border-color:var(--copper-dim);}
+
+.card{
+  background:var(--panel);border:1px solid var(--line);
+  border-radius:16px;padding:26px;
+}
+
+.badge{padding:4px 12px;border-radius:20px;font-size:.72rem;font-weight:600;display:inline-block;}
+.badge.approved{background:#0f2420;color:var(--teal);border:1px solid #1e4a3f;}
+.badge.pending{background:#241d10;color:var(--copper);border:1px solid #4a3a1c;}
+.badge.blocked{background:#251616;color:var(--rose);border:1px solid #4a2a28;}
+
+.toast{
+  position:fixed;bottom:26px;left:50%;transform:translateX(-50%);
+  background:var(--panel-2);border:1px solid var(--line);color:var(--text);
+  padding:12px 22px;border-radius:10px;font-size:.85rem;font-weight:500;
+  display:none;box-shadow:0 12px 30px rgba(0,0,0,.5);z-index:999;
+  max-width:90%;text-align:center;
+}
+
+/* ---- centered page shell (login / deposit / withdraw) ---- */
+.shell{
+  min-height:100vh;width:100%;
+  display:flex;align-items:center;justify-content:center;
+  padding:24px;
+}
+.back-link{
+  display:inline-flex;align-items:center;gap:8px;
+  color:var(--text-dim);text-decoration:none;font-size:.85rem;
+  margin-bottom:18px;
+}
+.back-link:hover{color:var(--text);}
+
+/* ---- table ---- */
+table{width:100%;border-collapse:collapse;font-size:.85rem;}
+th{
+  text-align:left;color:var(--text-faint);font-weight:500;
+  font-size:.72rem;padding:0 10px 10px;border-bottom:1px solid var(--line);
+}
+td{padding:13px 10px;border-bottom:1px solid #1a1f29;}
+tr:last-child td{border-bottom:none;}
+.table-wrap{
+  background:var(--panel);border:1px solid var(--line);border-radius:14px;
+  padding:6px;overflow-x:auto;
+}
