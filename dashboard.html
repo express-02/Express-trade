@@ -43,8 +43,14 @@
   .chart-wrap{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px;margin-bottom:28px;}
   #priceChart{width:100%;height:180px;display:block;}
 
+  /* ---- Holdings table with real coin icons ---- */
   .asset-name-cell{display:flex;align-items:center;gap:10px;}
-  .asset-glyph{width:32px;height:32px;border-radius:9px;background:var(--panel-2);display:flex;align-items:center;justify-content:center;color:var(--copper);border:1px solid var(--line);font-size:.85rem;flex:none;}
+  .asset-glyph{
+    width:32px;height:32px;border-radius:50%;
+    background:var(--panel-2);display:flex;align-items:center;justify-content:center;
+    border:1px solid var(--line);flex:none;overflow:hidden;
+  }
+  .asset-glyph img{width:100%;height:100%;object-fit:cover;}
   .asset-sub{color:var(--text-faint);font-size:.72rem;}
   .chg{font-weight:600;padding:3px 9px;border-radius:6px;font-size:.78rem;}
   .chg.up{color:var(--teal);background:#0f2420;}
@@ -61,6 +67,43 @@
   .log-item:last-child{border-bottom:none;}
   .log-item .l-what{color:var(--text-dim);}
   .log-item .l-when{color:var(--text-faint);white-space:nowrap;}
+
+  /* ---- Trade modal ---- */
+  .modal-overlay{
+    position:fixed;inset:0;width:100%;height:100%;
+    background:rgba(0,0,0,0.72);backdrop-filter:blur(6px);
+    display:none;align-items:center;justify-content:center;
+    z-index:1000;padding:20px;
+  }
+  .modal-overlay.show{display:flex;}
+  .modal{
+    background:var(--panel);border:1px solid var(--line);
+    border-radius:22px;padding:26px 24px;max-width:420px;width:100%;
+    box-shadow:0 30px 60px rgba(0,0,0,0.6);
+    animation:modalIn 0.25s ease;
+  }
+  @keyframes modalIn{from{opacity:0;transform:translateY(20px);}to{opacity:1;transform:translateY(0);}}
+  .modal h3{font-family:'Fraunces',serif;font-size:1.35rem;font-weight:500;margin-bottom:4px;}
+  .modal .modal-sub{font-size:.82rem;color:var(--text-faint);margin-bottom:20px;line-height:1.5;}
+  .coin-option{
+    display:flex;align-items:center;gap:14px;
+    background:var(--panel-2);border:1px solid var(--line);
+    border-radius:12px;padding:14px 16px;margin-bottom:10px;
+    cursor:pointer;transition:.15s;
+  }
+  .coin-option:hover{border-color:var(--copper);background:var(--panel);transform:translateY(-1px);}
+  .coin-option img{width:38px;height:38px;border-radius:50%;flex:none;}
+  .coin-option .co-info{flex:1;min-width:0;}
+  .coin-option .co-name{font-weight:600;font-size:.92rem;color:var(--text);}
+  .coin-option .co-sym{font-size:.72rem;color:var(--text-faint);text-transform:uppercase;letter-spacing:.4px;}
+  .coin-option .co-price{text-align:right;font-family:'Fraunces',serif;font-weight:500;font-size:1rem;}
+  .coin-option .co-price small{display:block;font-size:.68rem;font-family:'Inter',sans-serif;font-weight:400;color:var(--text-faint);margin-top:2px;}
+  .modal-close{
+    width:100%;padding:12px;background:transparent;border:1px solid var(--line);
+    color:var(--text-dim);border-radius:10px;font-weight:600;cursor:pointer;
+    margin-top:6px;font-size:.85rem;transition:.15s;
+  }
+  .modal-close:hover{border-color:var(--copper-dim);color:var(--text);}
 
   @media (max-width:900px){
     .app{grid-template-columns:1fr;}
@@ -93,7 +136,7 @@
       <div class="action" id="tradeBtn"><i class="fas fa-repeat"></i><span>Trade</span></div>
     </div>
 
-    <div class="panel-title"><h3>BTC/USDT</h3><span id="feedLabel">Live market feed</span></div>
+    <div class="panel-title"><h3>BTC/USDT</h3><span>Live market feed</span></div>
     <div class="chart-wrap"><canvas id="priceChart"></canvas></div>
 
     <div class="panel-title"><h3>Holdings</h3><span>Portfolio</span></div>
@@ -118,6 +161,16 @@
 
 <div class="toast" id="toast"></div>
 
+<!-- ========== TRADE MODAL ========== -->
+<div class="modal-overlay" id="tradeModal">
+  <div class="modal">
+    <h3>Buy Crypto</h3>
+    <p class="modal-sub">Choose a coin to buy. $100 will be spent from your available balance.</p>
+    <div id="coinOptions"></div>
+    <button class="modal-close" id="modalClose">Cancel</button>
+  </div>
+</div>
+
 <script>
 (function(){
   const USERS_KEY = 'ledgerlineUsers';
@@ -136,8 +189,12 @@
 
   let users = getUsers();
   let user = users.find(u => u.email === session.email) || session;
+
+  // ensure all coin holdings exist
   user.balance = user.balance ?? 0;
   user.btc = user.btc ?? 0;
+  user.eth = user.eth ?? 0;
+  user.sol = user.sol ?? 0;
 
   function persist(){
     users = getUsers();
@@ -157,111 +214,214 @@
     toastEl._t = setTimeout(()=>toastEl.style.display='none', 2600);
   }
 
-  // ---- live market data (Binance public API) ----
-  const SYMBOLS = ['BTCUSDT','ETHUSDT','SOLUSDT'];
-  const prices = {BTCUSDT:0, ETHUSDT:0, SOLUSDT:0};
-  const changes24h = {BTCUSDT:0, ETHUSDT:0, SOLUSDT:0};
-  let btcHistory = [];
+  // ============================================================
+  //  COIN ICONS (real coin images — same CDN as landing page)
+  // ============================================================
+  const ICONS = {
+    BTC: 'https://cdn.jsdelivr.net/gh/spothq/cryptocurrency-icons@master/128/color/btc.png',
+    ETH: 'https://cdn.jsdelivr.net/gh/spothq/cryptocurrency-icons@master/128/color/eth.png',
+    SOL: 'https://cdn.jsdelivr.net/gh/spothq/cryptocurrency-icons@master/128/color/sol.png'
+  };
 
-  async function fetchPrices(){
-    try{
-      const url = 'https://api.binance.com/api/v3/ticker/24hr?symbols=' + encodeURIComponent(JSON.stringify(SYMBOLS));
-      const res = await fetch(url);
-      const data = await res.json();
-      data.forEach(d=>{
-        prices[d.symbol] = parseFloat(d.lastPrice);
-        changes24h[d.symbol] = parseFloat(d.priceChangePercent);
-      });
-      renderAssets();
-      renderBalance();
-    }catch(e){ /* keep last known */ }
+  // ============================================================
+  //  COIN META (starting prices + volatility)
+  // ============================================================
+  const COIN_META = {
+    BTC: { name:'Bitcoin',  base: 68000, vol: 0.012 },
+    ETH: { name:'Ethereum', base: 3400,  vol: 0.015 },
+    SOL: { name:'Solana',   base: 165,   vol: 0.025 }
+  };
+
+  // ============================================================
+  //  MARKET STATE — SIMULATED (no API, never breaks)
+  // ============================================================
+  const market = {};
+  Object.keys(COIN_META).forEach(sym=>{
+    const m = COIN_META[sym];
+    market[sym] = {
+      price:  m.base * (0.98 + Math.random()*0.04),
+      change: (Math.random()*6 - 3),
+      vol:    m.vol
+    };
+  });
+
+  function tickPrices(){
+    Object.keys(market).forEach(sym=>{
+      const s = market[sym];
+      const drift = (Math.random() - 0.5) * s.vol * s.price * 0.06;
+      s.price = Math.max(s.price + drift, 0.0001);
+      s.change += (Math.random() - 0.5) * 0.15;
+      if(s.change > 15)  s.change = 15;
+      if(s.change < -15) s.change = -15;
+    });
+    renderAssets();
+    renderBalance();
+    updateChartHeader();
   }
 
-  async function fetchChart(){
-    try{
-      const res = await fetch('https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=5m&limit=60');
-      const data = await res.json();
-      btcHistory = data.map(k => parseFloat(k[4]));
-      drawChart();
-    }catch(e){ /* keep last chart */ }
-  }
+  const fmt = (n) => '$' + n.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+  const fmtHold = (n) => n.toLocaleString('en-US',{maximumFractionDigits:4});
 
+  // ============================================================
+  //  CHART — PURE JS (canvas, no API)
+  // ============================================================
   const canvas = document.getElementById('priceChart');
   const ctx = canvas.getContext('2d');
-  function resizeCanvas(){
-    canvas.width = canvas.clientWidth * devicePixelRatio;
-    canvas.height = canvas.clientHeight * devicePixelRatio;
+  const HIST_POINTS = 60;
+  let chartData = [];
+
+  function seedChartData(){
+    chartData = [];
+    let p = market.BTC.price * (0.985 + Math.random()*0.03);
+    for(let i=0; i<HIST_POINTS; i++){
+      p += (Math.random() - 0.48) * p * 0.004;
+      chartData.push(Math.max(p, 0.0001));
+    }
+    chartData[chartData.length - 1] = market.BTC.price;
   }
+
+  function resizeCanvas(){
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width  = canvas.clientWidth  * dpr;
+    canvas.height = canvas.clientHeight * dpr;
+  }
+
   function drawChart(){
-    resizeCanvas();
+    const dpr = window.devicePixelRatio || 1;
     const w = canvas.width, h = canvas.height;
     ctx.clearRect(0,0,w,h);
-    const data = btcHistory.length ? btcHistory : [0, 0];
-    const min = Math.min(...data), max = Math.max(...data);
-    const pad = 10 * devicePixelRatio;
-    ctx.beginPath();
-    data.forEach((p,i)=>{
-      const x = pad + (i/(data.length-1 || 1)) * (w - pad*2);
-      const y = h - pad - ((p-min)/((max-min) || 1)) * (h - pad*2);
-      i===0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y);
+
+    if(!chartData.length){
+      ctx.fillStyle = '#5f6b7d';
+      ctx.font = `${13*dpr}px Inter, sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.fillText('Loading chart…', w/2, h/2);
+      return;
+    }
+
+    const min = Math.min(...chartData);
+    const max = Math.max(...chartData);
+    const range = (max - min) || 1;
+    const padTop = 14*dpr, padBot = 14*dpr, padLeft = 6*dpr, padRight = 6*dpr;
+    const chartH = h - padTop - padBot;
+    const chartW = w - padLeft - padRight;
+
+    const isUp = chartData[chartData.length-1] >= chartData[0];
+    const lineColor = isUp ? '#3fb98f' : '#d9705f';
+
+    const pts = chartData.map((p,i)=>{
+      const x = padLeft + (i/(chartData.length-1 || 1)) * chartW;
+      const y = padTop + chartH - ((p-min)/range) * chartH;
+      return [x,y];
     });
-    ctx.strokeStyle = '#22c55e';
-    ctx.lineWidth = 2 * devicePixelRatio;
-    ctx.stroke();
-    ctx.lineTo(w-pad, h);
-    ctx.lineTo(pad, h);
+
+    // gradient fill
+    const grad = ctx.createLinearGradient(0, 0, 0, h);
+    if(isUp){
+      grad.addColorStop(0, 'rgba(63,185,143,0.30)');
+      grad.addColorStop(1, 'rgba(63,185,143,0)');
+    } else {
+      grad.addColorStop(0, 'rgba(217,112,95,0.30)');
+      grad.addColorStop(1, 'rgba(217,112,95,0)');
+    }
+
+    // fill
+    ctx.beginPath();
+    pts.forEach(([x,y], i)=> i===0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y));
+    ctx.lineTo(pts[pts.length-1][0], h - padBot);
+    ctx.lineTo(pts[0][0], h - padBot);
     ctx.closePath();
-    const grad = ctx.createLinearGradient(0,0,0,h);
-    grad.addColorStop(0,'rgba(34,197,94,0.25)');
-    grad.addColorStop(1,'rgba(34,197,94,0)');
     ctx.fillStyle = grad;
+    ctx.fill();
+
+    // line
+    ctx.beginPath();
+    pts.forEach(([x,y], i)=> i===0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y));
+    ctx.strokeStyle = lineColor;
+    ctx.lineWidth = 2 * dpr;
+    ctx.lineJoin = 'round';
+    ctx.stroke();
+
+    // last point dot + glow
+    const [lx, ly] = pts[pts.length-1];
+    ctx.beginPath();
+    ctx.arc(lx, ly, 3.5*dpr, 0, Math.PI*2);
+    ctx.fillStyle = lineColor;
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(lx, ly, 7*dpr, 0, Math.PI*2);
+    ctx.fillStyle = isUp ? 'rgba(63,185,143,0.22)' : 'rgba(217,112,95,0.22)';
     ctx.fill();
   }
 
-  const assets = [
-    {name:'Bitcoin', sym:'BTC', pair:'BTCUSDT', glyph:'₿'},
-    {name:'Ethereum', sym:'ETH', pair:'ETHUSDT', glyph:'Ξ'},
-    {name:'Solana', sym:'SOL', pair:'SOLUSDT', glyph:'◎'}
-  ];
-  const assetBody = document.getElementById('assetBody');
+  function pushChartPoint(){
+    chartData.push(market.BTC.price);
+    if(chartData.length > HIST_POINTS) chartData.shift();
+    drawChart();
+  }
 
-  function fmt(n){ return n.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2}); }
+  // Chart header update (no time — just the price of the pair, if needed later)
+  function updateChartHeader(){
+    // No time displayed anywhere — intentionally left blank
+    // (kept as a hook in case you want to update price labels later)
+  }
+
+  // ============================================================
+  //  HOLDINGS TABLE (with real coin icons)
+  // ============================================================
+  const ASSETS = ['BTC','ETH','SOL'];
+  const HOLDING_KEYS = { BTC:'btc', ETH:'eth', SOL:'sol' };
+  const assetBody = document.getElementById('assetBody');
 
   function renderAssets(){
     assetBody.innerHTML = '';
-    assets.forEach(a=>{
-      const p = prices[a.pair] || 0;
-      const chg = changes24h[a.pair] || 0;
-      const up = chg >= 0;
-      const holdingValue = a.sym==='BTC' ? (user.btc * p) : 0;
+    ASSETS.forEach(sym=>{
+      const meta = COIN_META[sym];
+      const s = market[sym];
+      const up = s.change >= 0;
+      const holding = user[HOLDING_KEYS[sym]] || 0;
+      const holdingValue = holding * s.price;
+
       const tr = document.createElement('tr');
       tr.innerHTML = `
         <td><div class="asset-name-cell">
-          <div class="asset-glyph">${a.glyph}</div>
-          <div><div>${a.name}</div><div class="asset-sub">${a.sym}</div></div>
+          <div class="asset-glyph"><img src="${ICONS[sym]}" alt="${sym}" onerror="this.style.display='none'"></div>
+          <div><div>${meta.name}</div><div class="asset-sub">${sym}</div></div>
         </div></td>
-        <td>$${fmt(p)}</td>
-        <td><span class="chg ${up?'up':'down'}">${up?'+':''}${chg.toFixed(2)}%</span></td>
-        <td>$${fmt(holdingValue)}</td>
+        <td>${fmt(s.price)}</td>
+        <td><span class="chg ${up?'up':'down'}">${up?'+':''}${s.change.toFixed(2)}%</span></td>
+        <td>${fmt(holdingValue)}</td>
       `;
       assetBody.appendChild(tr);
     });
   }
 
+  // ============================================================
+  //  BALANCE / PORTFOLIO VALUE
+  // ============================================================
   let startBalance = null;
   function renderBalance(){
-    const btcPrice = prices.BTCUSDT || 0;
-    const total = (user.balance || 0) + user.btc * btcPrice;
+    const total = (user.balance || 0)
+                + (user.btc || 0) * market.BTC.price
+                + (user.eth || 0) * market.ETH.price
+                + (user.sol || 0) * market.SOL.price;
+
     if(startBalance === null) startBalance = total || 1;
-    document.getElementById('mainBalance').textContent = fmt(total);
-    document.getElementById('availBalance').textContent = '$' + fmt(user.balance || 0);
+
+    document.getElementById('mainBalance').textContent =
+      total.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+    document.getElementById('availBalance').textContent = '$' + (user.balance || 0).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
     document.getElementById('btcHeld').textContent = (user.btc || 0).toFixed(4);
-    const deltaPct = startBalance ? ((total-startBalance)/startBalance*100) : 0;
+
+    const deltaPct = startBalance ? ((total - startBalance) / startBalance * 100) : 0;
     const badge = document.getElementById('deltaBadge');
     badge.textContent = (deltaPct>=0?'+':'') + deltaPct.toFixed(2) + '%';
     badge.className = 'delta ' + (deltaPct>=0?'up':'down');
   }
 
+  // ============================================================
+  //  ACTIVITY LOG
+  // ============================================================
   function pushLog(text){
     const log = document.getElementById('activityLog');
     const item = document.createElement('div');
@@ -271,38 +431,111 @@
     while(log.children.length > 6) log.removeChild(log.lastChild);
   }
 
-  document.getElementById('tradeBtn').addEventListener('click', ()=>{
+  // ============================================================
+  //  TRADE MODAL
+  // ============================================================
+  const modal = document.getElementById('tradeModal');
+  const coinOptions = document.getElementById('coinOptions');
+
+  function renderCoinOptions(){
+    coinOptions.innerHTML = ASSETS.map(sym=>{
+      const meta = COIN_META[sym];
+      const s = market[sym];
+      return `
+        <div class="coin-option" data-sym="${sym}">
+          <img src="${ICONS[sym]}" alt="${sym}" onerror="this.style.display='none'">
+          <div class="co-info">
+            <div class="co-name">${meta.name}</div>
+            <div class="co-sym">${sym}</div>
+          </div>
+          <div class="co-price">
+            ${fmt(s.price)}
+            <small>${s.change>=0?'+':''}${s.change.toFixed(2)}%</small>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  function openTradeModal(){
+    renderCoinOptions();
+    modal.classList.add('show');
+  }
+  function closeTradeModal(){
+    modal.classList.remove('show');
+  }
+
+  document.getElementById('tradeBtn').addEventListener('click', openTradeModal);
+  document.getElementById('modalClose').addEventListener('click', closeTradeModal);
+  modal.addEventListener('click', (e)=>{
+    if(e.target === modal) closeTradeModal();
+  });
+
+  // handle coin selection
+  coinOptions.addEventListener('click', (e)=>{
+    const opt = e.target.closest('.coin-option');
+    if(!opt) return;
+    const sym = opt.dataset.sym;
+    buyCoin(sym);
+  });
+
+  function buyCoin(sym){
     const spend = 100;
     if((user.balance || 0) < spend){
       toast('❌ Not enough balance to place a trade');
       return;
     }
-    const btcPrice = prices.BTCUSDT;
-    if(!btcPrice){ toast('⏳ Waiting on live price…'); return; }
-    const btcBought = spend / btcPrice;
-    user.balance -= spend;
-    user.btc += btcBought;
-    persist(); renderBalance(); renderAssets();
-    pushLog(`Bought ${btcBought.toFixed(5)} BTC`);
-    toast('📈 Buy: ' + btcBought.toFixed(5) + ' BTC');
-  });
+    const price = market[sym].price;
+    if(!price){ toast('⏳ Waiting on price…'); return; }
 
+    const amount = spend / price;
+    user.balance -= spend;
+
+    if(sym === 'BTC') user.btc += amount;
+    if(sym === 'ETH') user.eth += amount;
+    if(sym === 'SOL') user.sol += amount;
+
+    persist();
+    renderBalance();
+    renderAssets();
+
+    pushLog(`Bought ${amount.toFixed(5)} ${sym}`);
+    toast(`📈 Bought ${amount.toFixed(5)} ${sym}`);
+    closeTradeModal();
+  }
+
+  // ============================================================
+  //  LOGOUT
+  // ============================================================
   document.getElementById('logoutBtn').addEventListener('click', ()=>{
     localStorage.removeItem(SESSION_KEY);
     toast('👋 Signed out');
     setTimeout(()=> window.location.href = 'index.html', 800);
   });
 
-  window.addEventListener('resize', drawChart);
+  // ============================================================
+  //  RESIZE
+  // ============================================================
+  window.addEventListener('resize', ()=>{
+    resizeCanvas();
+    drawChart();
+  });
 
-  // initial load + polling
-  fetchPrices();
-  fetchChart();
-  pushLog('Session started');
+  // ============================================================
+  //  BOOT
+  // ============================================================
+  seedChartData();
+  resizeCanvas();
+  drawChart();
+
   renderAssets();
   renderBalance();
-  setInterval(fetchPrices, 8000);   // live prices
-  setInterval(fetchChart, 60000);   // chart every 60s
+  pushLog('Session started');
+
+  // simulate live updates
+  setInterval(tickPrices, 3000);       // prices every 3s
+  setInterval(pushChartPoint, 5000);   // chart every 5s
+
 })();
 </script>
 <!--Start of Tawk.to Script-->
