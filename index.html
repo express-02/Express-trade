@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Express Trade • Welcome</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0a0d12;
+    --panel:#11151c;
+    --panel-2:#161b24;
+    --line:#232a35;
+    --text:#e8ecf3;
+    --text-dim:#9aa4b5;
+    --text-faint:#5f6b7d;
+    --copper:#c9954f;
+    --copper-dim:#8f6a37;
+    --teal:#3fb98f;
+    --rose:#d9705f;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  html,body{height:100%;}
+  body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:'Inter',sans-serif;
+    -webkit-font-smoothing:antialiased;
+    min-height:100vh;
+    position:relative;
+    overflow-x:hidden;
+  }
+  body::before{
+    content:'';
+    position:fixed;
+    top:-25%;
+    left:50%;
+    transform:translateX(-50%);
+    width:900px;
+    height:900px;
+    background:radial-gradient(circle,rgba(201,149,79,0.09),transparent 62%);
+    pointer-events:none;
+    z-index:0;
+  }
+
+  /* ========== NAV ========== */
+  .nav{
+    padding:22px 34px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    position:relative;
+    z-index:2;
+    border-bottom:1px solid var(--line);
+  }
+  .brand{display:flex;align-items:center;gap:10px;}
+  .brand-mark{
+    width:34px;height:34px;border-radius:9px;
+    background:linear-gradient(160deg,var(--copper),var(--copper-dim));
+    display:flex;align-items:center;justify-content:center;
+    font-family:'Fraunces',serif;font-weight:600;font-size:1rem;color:#0a0d12;
+  }
+  .brand span{font-family:'Fraunces',serif;font-size:1.1rem;letter-spacing:.2px;}
+  .nav-links a{
+    color:var(--text-dim);
+    font-size:.85rem;
+    text-decoration:none;
+    margin-left:22px;
+    font-weight:500;
+    transition:.15s;
+  }
+  .nav-links a:hover{color:var(--copper);}
+  .nav-links a.accent{color:var(--copper);}
+
+  /* ========== COIN STRIP (TOP) ========== */
+  .coin-strip{
+    background:linear-gradient(180deg,#0f131a, #0a0d12);
+    border-bottom:1px solid var(--line);
+    padding:18px 0;
+    position:relative;
+    z-index:1;
+    overflow:hidden;
+  }
+  .coin-strip-title{
+    text-align:center;
+    font-size:.68rem;
+    letter-spacing:3px;
+    color:var(--copper);
+    text-transform:uppercase;
+    font-weight:600;
+    margin-bottom:14px;
+  }
+  .coin-track{
+    display:flex;
+    gap:16px;
+    padding:0 20px;
+    overflow-x:auto;
+    scrollbar-width:none;
+    -ms-overflow-style:none;
+  }
+  .coin-track::-webkit-scrollbar{display:none;}
+  .coin-pill{
+    flex:none;
+    display:flex;
+    align-items:center;
+    gap:12px;
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:14px;
+    padding:12px 18px;
+    min-width:190px;
+    transition:.18s;
+    cursor:default;
+  }
+  .coin-pill:hover{
+    border-color:var(--copper-dim);
+    background:var(--panel-2);
+    transform:translateY(-2px);
+  }
+  .coin-pill img{
+    width:34px;height:34px;
+    border-radius:50%;
+    flex:none;
+  }
+  .coin-pill .info{display:flex;flex-direction:column;gap:2px;min-width:0;}
+  .coin-pill .nm{
+    font-size:.78rem;font-weight:600;color:var(--text);letter-spacing:.2px;
+  }
+  .coin-pill .pr{
+    font-size:.92rem;font-weight:600;font-family:'Fraunces',serif;letter-spacing:-0.2px;
+  }
+  .coin-pill .ch{
+    font-size:.68rem;font-weight:600;padding:2px 7px;border-radius:5px;margin-left:auto;
+  }
+  .coin-pill .ch.up{color:var(--teal);background:rgba(63,185,143,0.12);}
+  .coin-pill .ch.down{color:var(--rose);background:rgba(217,112,95,0.12);}
+
+  /* ========== HERO ========== */
+  main{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    padding:60px 24px 40px;
+    text-align:center;
+    position:relative;
+    z-index:1;
+  }
+  .eyebrow{
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    font-size:.7rem;
+    color:var(--copper);
+    letter-spacing:2px;
+    text-transform:uppercase;
+    border:1px solid rgba(201,149,79,0.3);
+    background:rgba(201,149,79,0.06);
+    padding:7px 16px;
+    border-radius:20px;
+    margin-bottom:26px;
+    font-weight:600;
+  }
+  h1{
+    font-family:'Fraunces',serif;
+    font-weight:500;
+    font-size:clamp(2.1rem,5vw,3.4rem);
+    line-height:1.12;
+    letter-spacing:-1px;
+    max-width:720px;
+    margin-bottom:20px;
+  }
+  h1 em{font-style:normal;color:var(--copper);}
+  .sub{
+    color:var(--text-dim);
+    font-size:1rem;
+    max-width:520px;
+    line-height:1.65;
+    margin-bottom:44px;
+  }
+  .cta-row{
+    display:flex;
+    gap:14px;
+    flex-wrap:wrap;
+    justify-content:center;
+    width:100%;
+    max-width:460px;
+  }
+  .cta{
+    flex:1 1 180px;
+    min-width:150px;
+    padding:16px 26px;
+    border-radius:12px;
+    font-weight:600;
+    font-size:.92rem;
+    cursor:pointer;
+    text-decoration:none;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    gap:9px;
+    transition:.18s;
+    border:1px solid transparent;
+  }
+  .cta-primary{
+    background:linear-gradient(160deg,var(--copper),var(--copper-dim));
+    color:#0a0d12;
+    box-shadow:0 8px 28px -8px rgba(201,149,79,0.5);
+  }
+  .cta-primary:hover{transform:translateY(-2px);box-shadow:0 12px 34px -8px rgba(201,149,79,0.7);}
+  .cta-ghost{background:transparent;border-color:var(--line);color:var(--text);}
+  .cta-ghost:hover{border-color:var(--copper-dim);background:var(--panel);}
+
+  /* ========== CHART SECTION ========== */
+  .section{
+    width:100%;
+    max-width:1080px;
+    padding:20px 24px 60px;
+    position:relative;
+    z-index:1;
+    margin:0 auto;
+  }
+  .section-head{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-end;
+    margin-bottom:20px;
+    flex-wrap:wrap;
+    gap:10px;
+  }
+  .section-head h2{
+    font-family:'Fraunces',serif;
+    font-size:1.6rem;
+    font-weight:500;
+    letter-spacing:-0.4px;
+  }
+  .section-head .meta{
+    font-size:.75rem;
+    color:var(--text-faint);
+    display:flex;
+    align-items:center;
+    gap:8px;
+  }
+  .live-dot{
+    width:7px;height:7px;border-radius:50%;
+    background:var(--teal);
+    box-shadow:0 0 0 0 rgba(63,185,143,0.6);
+    animation:pulse 1.8s infinite;
+  }
+  @keyframes pulse{
+    0%{box-shadow:0 0 0 0 rgba(63,185,143,0.6);}
+    70%{box-shadow:0 0 0 10px rgba(63,185,143,0);}
+    100%{box-shadow:0 0 0 0 rgba(63,185,143,0);}
+  }
+
+  .chart-card{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:16px;
+    padding:22px 24px;
+    position:relative;
+    overflow:hidden;
+  }
+  .chart-head{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:16px;
+    flex-wrap:wrap;
+    gap:14px;
+  }
+  .chart-pair{
+    display:flex;
+    align-items:center;
+    gap:12px;
+  }
+  .chart-pair img{width:36px;height:36px;}
+  .chart-pair .name{
+    font-weight:600;
+    font-size:1rem;
+  }
+  .chart-pair .sub{
+    font-size:.72rem;
+    color:var(--text-faint);
+    margin:0;
+  }
+  .chart-price{
+    text-align:right;
+  }
+  .chart-price .p{
+    font-family:'Fraunces',serif;
+    font-size:1.7rem;
+    font-weight:500;
+    letter-spacing:-0.5px;
+  }
+  .chart-price .d{
+    font-size:.78rem;
+    font-weight:600;
+  }
+  .chart-price .d.up{color:var(--teal);}
+  .chart-price .d.down{color:var(--rose);}
+
+  #btcChart{
+    width:100%;
+    height:240px;
+    display:block;
+  }
+
+  /* ========== MARKET GRID ========== */
+  .market-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fill,minmax(220px,1fr));
+    gap:14px;
+  }
+  .coin-card{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:14px;
+    padding:18px;
+    transition:.15s;
+    display:flex;
+    flex-direction:column;
+    gap:14px;
+  }
+  .coin-card:hover{
+    border-color:var(--copper-dim);
+    background:var(--panel-2);
+    transform:translateY(-2px);
+  }
+  .coin-top{
+    display:flex;
+    align-items:center;
+    gap:12px;
+  }
+  .coin-top img{width:38px;height:38px;border-radius:50%;}
+  .coin-top .cname{font-weight:600;font-size:.92rem;}
+  .coin-top .csym{font-size:.72rem;color:var(--text-faint);text-transform:uppercase;letter-spacing:.4px;}
+  .coin-price-row{
+    display:flex;
+    justify-content:space-between;
+    align-items:baseline;
+    gap:8px;
+  }
+  .coin-price-row .cp{
+    font-family:'Fraunces',serif;
+    font-size:1.35rem;
+    font-weight:500;
+    letter-spacing:-0.3px;
+  }
+  .coin-price-row .cpc{
+    font-size:.78rem;
+    font-weight:600;
+    padding:3px 9px;
+    border-radius:6px;
+  }
+  .coin-price-row .cpc.up{color:var(--teal);background:rgba(63,185,143,0.12);}
+  .coin-price-row .cpc.down{color:var(--rose);background:rgba(217,112,95,0.12);}
+
+  /* ========== FEATURES ========== */
+  .features{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:16px;
+    max-width:1080px;
+    width:100%;
+    margin:0 auto;
+    padding:0 24px 70px;
+    position:relative;
+    z-index:1;
+  }
+  .feat{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:22px 20px;
+    transition:.15s;
+  }
+  .feat:hover{border-color:var(--copper-dim);}
+  .feat i{color:var(--copper);font-size:1.1rem;margin-bottom:12px;display:block;}
+  .feat h4{font-size:.92rem;font-weight:600;margin-bottom:6px;}
+  .feat p{font-size:.78rem;color:var(--text-faint);line-height:1.55;}
+
+  footer{
+    text-align:center;
+    padding:22px;
+    font-size:.72rem;
+    color:var(--text-faint);
+    border-top:1px solid var(--line);
+    position:relative;
+    z-index:1;
+  }
+
+  @media (max-width:640px){
+    .features{grid-template-columns:1fr;}
+    .nav{padding:18px 20px;}
+    .nav-links a{margin-left:14px;font-size:.78rem;}
+    h1{letter-spacing:-0.5px;}
+    main{padding:40px 18px 30px;}
+    .chart-price .p{font-size:1.4rem;}
+    .section{padding:16px 18px 40px;}
+  }
+</style>
+</head>
+<body>
+
+<!-- ========== NAV ========== -->
+<div class="nav">
+  <div class="brand">
+    <div class="brand-mark">E</div>
+    <span>Express Trade</span>
+  </div>
+  <div class="nav-links">
+    <a href="auth.html#login">Login</a>
+    <a href="auth.html#signup" class="accent">Sign Up</a>
+  </div>
+</div>
+
+<!-- ========== COIN STRIP (TOP) ========== -->
+<div class="coin-strip">
+  <div class="coin-strip-title">Live Crypto Market</div>
+  <div class="coin-track" id="coinTrack">
+    <!-- filled by JS -->
+  </div>
+</div>
+
+<!-- ========== HERO ========== -->
+<main>
+  <div class="eyebrow"><i class="fas fa-circle" style="font-size:.45rem;"></i> Trusted crypto platform</div>
+
+  <h1>Trade smarter with <em>Express Trade</em></h1>
+
+  <p class="sub">
+    Real-time crypto markets, secure deposits, and a clean trading experience — all in one platform.
+  </p>
+
+  <div class="cta-row">
+    <a href="auth.html#signup" class="cta cta-primary">
+      <i class="fas fa-user-plus"></i> Sign Up
+    </a>
+    <a href="auth.html#login" class="cta cta-ghost">
+      <i class="fas fa-arrow-right-to-bracket"></i> Login
+    </a>
+  </div>
+</main>
+
+<!-- ========== LIVE BTC CHART ========== -->
+<div class="section">
+  <div class="section-head">
+    <h2>Bitcoin · Market Chart</h2>
+    <div class="meta"><span class="live-dot"></span> Live simulation · updated just now</div>
+  </div>
+
+  <div class="chart-card">
+    <div class="chart-head">
+      <div class="chart-pair">
+        <img src="https://cdn.jsdelivr.net/gh/spothq/cryptocurrency-icons@master/128/color/btc.png" alt="BTC" />
+        <div>
+          <div class="name">Bitcoin <span style="color:var(--text-faint);font-weight:400;">BTC / USDT</span></div>
+          <div class="sub" id="chartUpdated">—</div>
+        </div>
+      </div>
+      <div class="chart-price">
+        <div class="p" id="btcPrice">$—</div>
+        <div class="d up" id="btcChange">+0.00%</div>
+      </div>
+    </div>
+
+    <canvas id="btcChart"></canvas>
+  </div>
+</div>
+
+<!-- ========== LIVE MARKET GRID ========== -->
+<div class="section">
+  <div class="section-head">
+    <h2>Markets</h2>
+    <div class="meta"><span class="live-dot"></span> Prices refresh every 5s</div>
+  </div>
+
+  <div class="market-grid" id="marketGrid">
+    <!-- filled by JS -->
+  </div>
+</div>
+
+<!-- ========== FEATURES ========== -->
+<div class="features">
+  <div class="feat">
+    <i class="fas fa-bolt"></i>
+    <h4>Instant execution</h4>
+    <p>Live market data feeds with quick order placement on BTC, ETH, SOL and more.</p>
+  </div>
+  <div class="feat">
+    <i class="fas fa-shield-alt"></i>
+    <h4>Secure & verified</h4>
+    <p>Every new account is manually reviewed and approved by our team.</p>
+  </div>
+  <div class="feat">
+    <i class="fas fa-chart-line"></i>
+    <h4>Real-time charts</h4>
+    <p>Track live price movement with streaming charts and portfolio updates.</p>
+  </div>
+</div>
+
+<footer>
+  © <span id="year"></span> Express Trade · All rights reserved
+</footer>
+
+<script>
+(function(){
+  // ============================================================
+  //  COIN DEFINITIONS  (logos from free CDN)
+  // ============================================================
+  const ICONS = {
+    BTC:  'https://cdn.jsdelivr.net/gh/spothq/cryptocurrency-icons@master/128/color/btc.png',
+    ETH:  'https://cdn.jsdelivr.net/gh/spothq/cryptocurrency-icons@master/128/color/eth.png',
+    SOL:  'https://cdn.jsdelivr.net/gh/spothq/cryptocurrency-icons@master/128/color/sol.png',
+    BNB:  'https://cdn.jsdelivr.net/gh/spothq/cryptocurrency-icons@master/128/color/bnb.png',
+    XRP:  'https://cdn.jsdelivr.net/gh/spothq/cryptocurrency-icons@master/128/color/xrp.png',
+    ADA:  'https://cdn.jsdelivr.net/gh/spothq/cryptocurrency-icons@master/128/color/ada.png',
+    DOGE: 'https://cdn.jsdelivr.net/gh/spothq/cryptocurrency-icons@master/128/color/doge.png',
+    MATIC:'https://cdn.jsdelivr.net/gh/spothq/cryptocurrency-icons@master/128/color/matic.png',
+    DOT:  'https://cdn.jsdelivr.net/gh/spothq/cryptocurrency-icons@master/128/color/dot.png',
+    LTC:  'https://cdn.jsdelivr.net/gh/spothq/cryptocurrency-icons@master/128/color/ltc.png',
+    AVAX: 'https://cdn.jsdelivr.net/gh/spothq/cryptocurrency-icons@master/128/color/avax.png',
+    LINK: 'https://cdn.jsdelivr.net/gh/spothq/cryptocurrency-icons@master/128/color/link.png'
+  };
+
+  // Starting prices (realistic values) + volatility factor
+  const COINS = [
+    { sym:'BTC',  name:'Bitcoin',   base: 68000, vol: 0.012 },
+    { sym:'ETH',  name:'Ethereum',  base: 3400,  vol: 0.015 },
+    { sym:'SOL',  name:'Solana',    base: 165,   vol: 0.025 },
+    { sym:'BNB',  name:'BNB',       base: 580,   vol: 0.014 },
+    { sym:'XRP',  name:'XRP',       base: 0.62,  vol: 0.022 },
+    { sym:'ADA',  name:'Cardano',   base: 0.45,  vol: 0.022 },
+    { sym:'DOGE', name:'Dogecoin',  base: 0.16,  vol: 0.035 },
+    { sym:'MATIC',name:'Polygon',   base: 0.72,  vol: 0.028 },
+    { sym:'DOT',  name:'Polkadot',  base: 6.8,   vol: 0.024 },
+    { sym:'LTC',  name:'Litecoin',  base: 82,    vol: 0.018 },
+    { sym:'AVAX', name:'Avalanche', base: 34,    vol: 0.028 },
+    { sym:'LINK', name:'Chainlink', base: 14.5,  vol: 0.023 }
+  ];
+
+  // live state
+  const state = {};
+  COINS.forEach(c=>{
+    state[c.sym] = {
+      price: c.base * (0.98 + Math.random()*0.04),
+      change: (Math.random()*6 - 3),   // -3% to +3%
+      vol: c.vol,
+      base: c.base
+    };
+  });
+
+  const fmtUSD = (n) => {
+    if(n >= 1000)  return '$' + n.toLocaleString('en-US',{maximumFractionDigits:2,minimumFractionDigits:2});
+    if(n >= 1)     return '$' + n.toLocaleString('en-US',{maximumFractionDigits:2,minimumFractionDigits:2});
+    return '$' + n.toLocaleString('en-US',{maximumFractionDigits:6});
+  };
+
+  // ============================================================
+  //  COIN STRIP (top of page — with logos)
+  // ============================================================
+  const coinTrack = document.getElementById('coinTrack');
+
+  function renderCoinStrip(){
+    coinTrack.innerHTML = COINS.map(c=>{
+      const s = state[c.sym];
+      const up = s.change >= 0;
+      return `
+        <div class="coin-pill">
+          <img src="${ICONS[c.sym]}" alt="${c.sym}" onerror="this.style.display='none'">
+          <div class="info">
+            <span class="nm">${c.sym} · ${c.name}</span>
+            <span class="pr">${fmtUSD(s.price)}</span>
+          </div>
+          <span class="ch ${up?'up':'down'}">${up?'+':''}${s.change.toFixed(2)}%</span>
+        </div>
+      `;
+    }).join('');
+  }
+
+  // ============================================================
+  //  MARKET GRID (cards)
+  // ============================================================
+  const marketGrid = document.getElementById('marketGrid');
+
+  function renderGrid(){
+    marketGrid.innerHTML = COINS.map(c=>{
+      const s = state[c.sym];
+      const up = s.change >= 0;
+      return `
+        <div class="coin-card">
+          <div class="coin-top">
+            <img src="${ICONS[c.sym]}" alt="${c.sym}" onerror="this.style.display='none'">
+            <div>
+              <div class="cname">${c.name}</div>
+              <div class="csym">${c.sym}</div>
+            </div>
+          </div>
+          <div class="coin-price-row">
+            <span class="cp">${fmtUSD(s.price)}</span>
+            <span class="cpc ${up?'up':'down'}">${up?'+':''}${s.change.toFixed(2)}%</span>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  // ============================================================
+  //  PRICE SIMULATION  (random walk — pure JS, no API)
+  // ============================================================
+  function tickPrices(){
+    COINS.forEach(c=>{
+      const s = state[c.sym];
+      // random walk — small change each tick
+      const drift = (Math.random() - 0.5) * s.vol * s.price * 0.06;
+      s.price = Math.max(s.price + drift, 0.0001);
+      // adjust 24h change % slightly
+      s.change += (Math.random() - 0.5) * 0.15;
+      // clamp change to reasonable range
+      if(s.change > 15)  s.change = 15;
+      if(s.change < -15) s.change = -15;
+    });
+
+    renderCoinStrip();
+    renderGrid();
+    updateBTCHeader();
+  }
+
+  // ============================================================
+  //  BTC HEADER  (big price above chart)
+  // ============================================================
+  function updateBTCHeader(){
+    const btc = state.BTC;
+    document.getElementById('btcPrice').textContent = fmtUSD(btc.price);
+    const chgEl = document.getElementById('btcChange');
+    const up = btc.change >= 0;
+    chgEl.textContent = (up?'+':'') + btc.change.toFixed(2) + '%';
+    chgEl.className = 'd ' + (up?'up':'down');
+    document.getElementById('chartUpdated').textContent =
+      'Updated ' + new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit', second:'2-digit'});
+  }
+
+  // ============================================================
+  //  CHART  (canvas — pure JS, no API)
+  // ============================================================
+  const canvas = document.getElementById('btcChart');
+  const ctx = canvas.getContext('2d');
+
+  // start with 60 historical points ending at current BTC price
+  const HIST_POINTS = 60;
+  let chartData = [];
+
+  function seedChartData(){
+    chartData = [];
+    let p = state.BTC.price * (0.985 + Math.random()*0.03);
+    for(let i=0; i<HIST_POINTS; i++){
+      p += (Math.random() - 0.48) * p * 0.004;
+      chartData.push(Math.max(p, 0.0001));
+    }
+    // force last value = current BTC price
+    chartData[chartData.length - 1] = state.BTC.price;
+  }
+
+  function resizeCanvas(){
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width  = canvas.clientWidth  * dpr;
+    canvas.height = canvas.clientHeight * dpr;
+  }
+
+  function drawChart(){
+    const dpr = window.devicePixelRatio || 1;
+    const w = canvas.width, h = canvas.height;
+    ctx.clearRect(0,0,w,h);
+
+    if(!chartData.length){
+      ctx.fillStyle = '#5f6b7d';
+      ctx.font = `${13*dpr}px Inter, sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.fillText('Loading chart…', w/2, h/2);
+      return;
+    }
+
+    const min = Math.min(...chartData);
+    const max = Math.max(...chartData);
+    const range = (max - min) || 1;
+    const padTop = 16*dpr, padBot = 16*dpr, padLeft = 6*dpr, padRight = 6*dpr;
+    const chartH = h - padTop - padBot;
+    const chartW = w - padLeft - padRight;
+
+    const isUp = chartData[chartData.length-1] >= chartData[0];
+    const lineColor = isUp ? '#3fb98f' : '#d9705f';
+
+    // points
+    const pts = chartData.map((p,i)=>{
+      const x = padLeft + (i/(chartData.length-1 || 1)) * chartW;
+      const y = padTop + chartH - ((p-min)/range) * chartH;
+      return [x,y];
+    });
+
+    // gradient fill
+    const grad = ctx.createLinearGradient(0, 0, 0, h);
+    if(isUp){
+      grad.addColorStop(0, 'rgba(63,185,143,0.32)');
+      grad.addColorStop(1, 'rgba(63,185,143,0)');
+    } else {
+      grad.addColorStop(0, 'rgba(217,112,95,0.32)');
+      grad.addColorStop(1, 'rgba(217,112,95,0)');
+    }
+
+    // fill area
+    ctx.beginPath();
+    pts.forEach(([x,y], i)=> i===0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y));
+    ctx.lineTo(pts[pts.length-1][0], h - padBot);
+    ctx.lineTo(pts[0][0], h - padBot);
+    ctx.closePath();
+    ctx.fillStyle = grad;
+    ctx.fill();
+
+    // stroke line
+    ctx.beginPath();
+    pts.forEach(([x,y], i)=> i===0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y));
+    ctx.strokeStyle = lineColor;
+    ctx.lineWidth = 2 * dpr;
+    ctx.lineJoin = 'round';
+    ctx.stroke();
+
+    // last point glow
+    const [lx, ly] = pts[pts.length-1];
+    ctx.beginPath();
+    ctx.arc(lx, ly, 3.5*dpr, 0, Math.PI*2);
+    ctx.fillStyle = lineColor;
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(lx, ly, 8*dpr, 0, Math.PI*2);
+    ctx.fillStyle = isUp ? 'rgba(63,185,143,0.22)' : 'rgba(217,112,95,0.22)';
+    ctx.fill();
+  }
+
+  function pushChartPoint(){
+    // add new point at current BTC price, drop oldest
+    chartData.push(state.BTC.price);
+    if(chartData.length > HIST_POINTS) chartData.shift();
+    drawChart();
+  }
+
+  // ============================================================
+  //  BOOT
+  // ============================================================
+  document.getElementById('year').textContent = new Date().getFullYear();
+
+  seedChartData();
+  resizeCanvas();
+  drawChart();
+
+  renderCoinStrip();
+  renderGrid();
+  updateBTCHeader();
+
+  window.addEventListener('resize', ()=>{
+    resizeCanvas();
+    drawChart();
+  });
+
+  // price updates (every 3s) — small changes for realism
+  setInterval(tickPrices, 3000);
+
+  // chart point every 5s
+  setInterval(pushChartPoint, 5000);
+
+})();
+</script>
+
+<!--Start of Tawk.to Script-->
+<script type="text/javascript">
+var Tawk_API=Tawk_API||{}, Tawk_LoadStart=new Date();
+(function(){
+var s1=document.createElement("script"),s0=document.getElementsByTagName("script")[0];
+s1.async=true;
+s1.src='https://embed.tawk.to/6aab42073768263445ac02ab/1k2mfjro1';
+s1.charset='UTF-8';
+s1.setAttribute('crossorigin','*');
+s0.parentNode.insertBefore(s1,s0);
+})();
+</script>
+<!--End of Tawk.to Script-->
+
+</body>
+</html>
