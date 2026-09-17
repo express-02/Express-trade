@@ -106,8 +106,8 @@
   const SESSION_KEY = 'ledgerlineSession';
   const DEPOSITS_KEY = 'ledgerlineDepositRequests';
 
-  // ⚠️ Replace this with your own BTC wallet address
-  const BTC_WALLET = 'bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh';
+  // ✅ Your BTC wallet address
+  const BTC_WALLET = '1D3FiQUNbT4aT9yUN4sWry3rFiSA8neuCQ';
 
   const session = JSON.parse(localStorage.getItem(SESSION_KEY));
   if(!session || session.status !== 'approved'){ window.location.href = 'index.html'; return; }
