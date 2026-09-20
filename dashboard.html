@@ -43,18 +43,17 @@
   .chart-wrap{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px;margin-bottom:28px;}
   #priceChart{width:100%;height:180px;display:block;}
 
-  /* ---- Holdings table with real coin icons ---- */
-  .asset-name-cell{display:flex;align-items:center;gap:10px;}
+  /* ---- Holdings table ---- */
+  .asset-name-cell{display:flex;align-items:center;gap:12px;}
   .asset-glyph{
-    width:32px;height:32px;border-radius:50%;
+    width:36px;height:36px;border-radius:50%;
     background:var(--panel-2);display:flex;align-items:center;justify-content:center;
     border:1px solid var(--line);flex:none;overflow:hidden;
   }
   .asset-glyph img{width:100%;height:100%;object-fit:cover;}
-  .asset-sub{color:var(--text-faint);font-size:.72rem;}
-  .chg{font-weight:600;padding:3px 9px;border-radius:6px;font-size:.78rem;}
-  .chg.up{color:var(--teal);background:#0f2420;}
-  .chg.down{color:var(--rose);background:#251515;}
+  .asset-name{font-weight:600;font-size:.92rem;color:var(--text);}
+  .asset-amt{font-size:.75rem;color:var(--text-faint);margin-top:2px;font-family:monospace;letter-spacing:-0.2px;}
+  .value-col{font-weight:600;font-size:.95rem;color:var(--text);}
 
   .side{background:var(--panel);border-left:1px solid var(--line);padding:26px 22px;overflow-y:auto;min-width:0;}
   .kpi{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid #1a1f29;gap:8px;}
@@ -142,7 +141,12 @@
     <div class="panel-title"><h3>Holdings</h3><span>Portfolio</span></div>
     <div class="table-wrap">
       <table>
-        <thead><tr><th>Asset</th><th>Price</th><th>24h</th><th>Holding value</th></tr></thead>
+        <thead>
+          <tr>
+            <th>Asset</th>
+            <th style="text-align:right;">Value</th>
+          </tr>
+        </thead>
         <tbody id="assetBody"></tbody>
       </table>
     </div>
@@ -189,8 +193,6 @@
 
   let users = getUsers();
   let user = users.find(u => u.email === session.email) || session;
-
-  // ensure all coin holdings exist
   user.balance = user.balance ?? 0;
   user.btc = user.btc ?? 0;
   user.eth = user.eth ?? 0;
@@ -215,7 +217,7 @@
   }
 
   // ============================================================
-  //  COIN ICONS (real coin images — same CDN as landing page)
+  //  COIN ICONS
   // ============================================================
   const ICONS = {
     BTC: 'https://cdn.jsdelivr.net/gh/spothq/cryptocurrency-icons@master/128/color/btc.png',
@@ -223,25 +225,30 @@
     SOL: 'https://cdn.jsdelivr.net/gh/spothq/cryptocurrency-icons@master/128/color/sol.png'
   };
 
-  // ============================================================
-  //  COIN META (starting prices + volatility)
-  // ============================================================
-  const COIN_META = {
-    BTC: { name:'Bitcoin',  base: 68000, vol: 0.012 },
-    ETH: { name:'Ethereum', base: 3400,  vol: 0.015 },
-    SOL: { name:'Solana',   base: 165,   vol: 0.025 }
+  const COIN_NAMES = {
+    BTC: 'Bitcoin',
+    ETH: 'Ethereum',
+    SOL: 'Solana'
+  };
+
+  const COIN_SYMS = {
+    BTC: 'BTC',
+    ETH: 'ETH',
+    SOL: 'SOL'
   };
 
   // ============================================================
-  //  MARKET STATE — SIMULATED (no API, never breaks)
+  //  MARKET STATE  (simulated prices — used for valuation only)
   // ============================================================
+  const COIN_BASE = { BTC: 80000, ETH: 3400, SOL: 165 };
+  const COIN_VOL  = { BTC: 0.012, ETH: 0.015, SOL: 0.025 };
+
   const market = {};
-  Object.keys(COIN_META).forEach(sym=>{
-    const m = COIN_META[sym];
+  Object.keys(COIN_BASE).forEach(sym=>{
     market[sym] = {
-      price:  m.base * (0.98 + Math.random()*0.04),
+      price: COIN_BASE[sym] * (0.98 + Math.random()*0.04),
       change: (Math.random()*6 - 3),
-      vol:    m.vol
+      vol: COIN_VOL[sym]
     };
   });
 
@@ -256,14 +263,12 @@
     });
     renderAssets();
     renderBalance();
-    updateChartHeader();
   }
 
   const fmt = (n) => '$' + n.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
-  const fmtHold = (n) => n.toLocaleString('en-US',{maximumFractionDigits:4});
 
   // ============================================================
-  //  CHART — PURE JS (canvas, no API)
+  //  CHART  (pure JS canvas — no API)
   // ============================================================
   const canvas = document.getElementById('priceChart');
   const ctx = canvas.getContext('2d');
@@ -315,7 +320,6 @@
       return [x,y];
     });
 
-    // gradient fill
     const grad = ctx.createLinearGradient(0, 0, 0, h);
     if(isUp){
       grad.addColorStop(0, 'rgba(63,185,143,0.30)');
@@ -325,7 +329,6 @@
       grad.addColorStop(1, 'rgba(217,112,95,0)');
     }
 
-    // fill
     ctx.beginPath();
     pts.forEach(([x,y], i)=> i===0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y));
     ctx.lineTo(pts[pts.length-1][0], h - padBot);
@@ -334,7 +337,6 @@
     ctx.fillStyle = grad;
     ctx.fill();
 
-    // line
     ctx.beginPath();
     pts.forEach(([x,y], i)=> i===0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y));
     ctx.strokeStyle = lineColor;
@@ -342,7 +344,6 @@
     ctx.lineJoin = 'round';
     ctx.stroke();
 
-    // last point dot + glow
     const [lx, ly] = pts[pts.length-1];
     ctx.beginPath();
     ctx.arc(lx, ly, 3.5*dpr, 0, Math.PI*2);
@@ -360,14 +361,8 @@
     drawChart();
   }
 
-  // Chart header update (no time — just the price of the pair, if needed later)
-  function updateChartHeader(){
-    // No time displayed anywhere — intentionally left blank
-    // (kept as a hook in case you want to update price labels later)
-  }
-
   // ============================================================
-  //  HOLDINGS TABLE (with real coin icons)
+  //  HOLDINGS TABLE  (Asset + You Own amount + Value)
   // ============================================================
   const ASSETS = ['BTC','ETH','SOL'];
   const HOLDING_KEYS = { BTC:'btc', ETH:'eth', SOL:'sol' };
@@ -376,21 +371,21 @@
   function renderAssets(){
     assetBody.innerHTML = '';
     ASSETS.forEach(sym=>{
-      const meta = COIN_META[sym];
-      const s = market[sym];
-      const up = s.change >= 0;
       const holding = user[HOLDING_KEYS[sym]] || 0;
-      const holdingValue = holding * s.price;
+      const holdingValue = holding * market[sym].price;
 
       const tr = document.createElement('tr');
       tr.innerHTML = `
-        <td><div class="asset-name-cell">
-          <div class="asset-glyph"><img src="${ICONS[sym]}" alt="${sym}" onerror="this.style.display='none'"></div>
-          <div><div>${meta.name}</div><div class="asset-sub">${sym}</div></div>
-        </div></td>
-        <td>${fmt(s.price)}</td>
-        <td><span class="chg ${up?'up':'down'}">${up?'+':''}${s.change.toFixed(2)}%</span></td>
-        <td>${fmt(holdingValue)}</td>
+        <td>
+          <div class="asset-name-cell">
+            <div class="asset-glyph"><img src="${ICONS[sym]}" alt="${sym}" onerror="this.style.display='none'"></div>
+            <div>
+              <div class="asset-name">${COIN_NAMES[sym]}</div>
+              <div class="asset-amt">${holding.toFixed(8)} ${COIN_SYMS[sym]}</div>
+            </div>
+          </div>
+        </td>
+        <td style="text-align:right;" class="value-col">${fmt(holdingValue)}</td>
       `;
       assetBody.appendChild(tr);
     });
@@ -439,13 +434,12 @@
 
   function renderCoinOptions(){
     coinOptions.innerHTML = ASSETS.map(sym=>{
-      const meta = COIN_META[sym];
       const s = market[sym];
       return `
         <div class="coin-option" data-sym="${sym}">
           <img src="${ICONS[sym]}" alt="${sym}" onerror="this.style.display='none'">
           <div class="co-info">
-            <div class="co-name">${meta.name}</div>
+            <div class="co-name">${COIN_NAMES[sym]}</div>
             <div class="co-sym">${sym}</div>
           </div>
           <div class="co-price">
@@ -471,12 +465,10 @@
     if(e.target === modal) closeTradeModal();
   });
 
-  // handle coin selection
   coinOptions.addEventListener('click', (e)=>{
     const opt = e.target.closest('.coin-option');
     if(!opt) return;
-    const sym = opt.dataset.sym;
-    buyCoin(sym);
+    buyCoin(opt.dataset.sym);
   });
 
   function buyCoin(sym){
@@ -486,7 +478,7 @@
       return;
     }
     const price = market[sym].price;
-    if(!price){ toast('⏳ Waiting on price…'); return; }
+    if(!price){ toast('⏳ Waiting on live price…'); return; }
 
     const amount = spend / price;
     user.balance -= spend;
@@ -499,8 +491,8 @@
     renderBalance();
     renderAssets();
 
-    pushLog(`Bought ${amount.toFixed(5)} ${sym}`);
-    toast(`📈 Bought ${amount.toFixed(5)} ${sym}`);
+    pushLog(`Bought ${amount.toFixed(6)} ${sym}`);
+    toast(`📈 Bought ${amount.toFixed(6)} ${sym}`);
     closeTradeModal();
   }
 
@@ -532,9 +524,8 @@
   renderBalance();
   pushLog('Session started');
 
-  // simulate live updates
-  setInterval(tickPrices, 3000);       // prices every 3s
-  setInterval(pushChartPoint, 5000);   // chart every 5s
+  setInterval(tickPrices, 3000);
+  setInterval(pushChartPoint, 5000);
 
 })();
 </script>
