@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html la<div><div></div></div>ng="en">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -24,7 +24,13 @@
 
   .hero{display:flex;align-items:baseline;gap:10px;margin:20px 0 4px;font-family:'Fraunces',serif;flex-wrap:wrap;}
   .hero .cur{font-size:1.6rem;color:var(--text-dim);font-weight:400;}
-  .hero .amt{font-size:3.2rem;font-weight:500;letter-spacing:-1px;}
+  .hero .amt{font-size:3.2rem;font-weight:500;letter-spacing:-1px;transition:.3s;}
+  .hero .amt.bump{animation:bump .5s ease;}
+  @keyframes bump{
+    0%{transform:scale(1);}
+    40%{transform:scale(1.08);color:#f2c14e;}
+    100%{transform:scale(1);}
+  }
   .hero .delta{font-family:'Inter',sans-serif;font-size:.9rem;font-weight:600;padding:5px 10px;border-radius:7px;}
   .delta.up{background:#122420;color:var(--teal);}
   .delta.down{background:#251616;color:var(--rose);}
@@ -32,7 +38,7 @@
 
   .action-row{display:flex;gap:10px;margin-bottom:30px;flex-wrap:wrap;}
   .action{flex:1 1 160px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px;cursor:pointer;display:flex;align-items:center;gap:12px;transition:.15s;text-decoration:none;color:var(--text);}
-  .action:hover{border-color:var(--copper-dim);background:var(--panel-2);}
+  .action:hover{border-color:var(--copper-dim);background:var(--panel-2);transform:translateY(-2px);}
   .action i{font-size:1.05rem;color:var(--copper);width:20px;text-align:center;}
   .action span{font-size:.85rem;font-weight:500;}
 
@@ -49,8 +55,10 @@
     width:36px;height:36px;border-radius:50%;
     background:var(--panel-2);display:flex;align-items:center;justify-content:center;
     border:1px solid var(--line);flex:none;overflow:hidden;
+    font-weight:700;font-size:.75rem;color:#0a0d12;font-family:'Inter',sans-serif;
   }
   .asset-glyph img{width:100%;height:100%;object-fit:cover;}
+  .asset-glyph.gold{background:linear-gradient(160deg,#d4a94a,#8f6a2f);color:#0a0d12;border-color:#a8842f;}
   .asset-name{font-weight:600;font-size:.92rem;color:var(--text);}
   .asset-amt{font-size:.75rem;color:var(--text-faint);margin-top:2px;font-family:monospace;letter-spacing:-0.2px;}
   .value-col{font-weight:600;font-size:.95rem;color:var(--text);}
@@ -62,51 +70,501 @@
   .kpi .k-val{font-size:.9rem;font-weight:600;text-align:right;}
   .kpi .k-val.copper{color:var(--copper);}
 
-  .log-item{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid #1a1f29;font-size:.78rem;gap:10px;}
+  .log-item{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid #1a1f29;font-size:.78rem;gap:10px;animation:fadeInLog .4s ease;}
+  @keyframes fadeInLog{from{opacity:0;transform:translateX(-8px);}to{opacity:1;transform:translateX(0);}}
   .log-item:last-child{border-bottom:none;}
   .log-item .l-what{color:var(--text-dim);}
   .log-item .l-when{color:var(--text-faint);white-space:nowrap;}
 
-  /* ---- Trade modal ---- */
+  /* ============================================================
+     TRADE MODAL — 4-STEP BALANCE FLOW
+     ============================================================ */
   .modal-overlay{
     position:fixed;inset:0;width:100%;height:100%;
-    background:rgba(0,0,0,0.72);backdrop-filter:blur(6px);
+    background:rgba(0,0,0,0.78);backdrop-filter:blur(8px);
     display:none;align-items:center;justify-content:center;
     z-index:1000;padding:20px;
   }
-  .modal-overlay.show{display:flex;}
+  .modal-overlay.show{display:flex;animation:overlayIn .25s ease;}
+  @keyframes overlayIn{from{opacity:0;}to{opacity:1;}}
+
   .modal{
-    background:var(--panel);border:1px solid var(--line);
-    border-radius:22px;padding:26px 24px;max-width:420px;width:100%;
-    box-shadow:0 30px 60px rgba(0,0,0,0.6);
-    animation:modalIn 0.25s ease;
+    background:linear-gradient(180deg,#141922,#0f131b);
+    border:1px solid #2a3243;
+    border-radius:24px;
+    padding:0;
+    max-width:460px;
+    width:100%;
+    box-shadow:0 40px 80px rgba(0,0,0,0.7), 0 0 0 1px rgba(201,149,79,0.08);
+    animation:modalIn .3s cubic-bezier(0.16,1,0.3,1);
+    overflow:hidden;
+    position:relative;
   }
-  @keyframes modalIn{from{opacity:0;transform:translateY(20px);}to{opacity:1;transform:translateY(0);}}
-  .modal h3{font-family:'Fraunces',serif;font-size:1.35rem;font-weight:500;margin-bottom:4px;}
-  .modal .modal-sub{font-size:.82rem;color:var(--text-faint);margin-bottom:20px;line-height:1.5;}
+  @keyframes modalIn{
+    from{opacity:0;transform:translateY(30px) scale(.96);}
+    to{opacity:1;transform:translateY(0) scale(1);}
+  }
+
+  .step-progress{
+    display:flex;
+    align-items:center;
+    padding:20px 26px 0;
+    gap:6px;
+  }
+  .step-dot{
+    flex:1;
+    height:3px;
+    background:#232a3a;
+    border-radius:3px;
+    transition:.4s;
+    position:relative;
+    overflow:hidden;
+  }
+  .step-dot.active::after{
+    content:'';
+    position:absolute;
+    inset:0;
+    background:linear-gradient(90deg,var(--copper),#f2c14e);
+    border-radius:3px;
+    animation:fillBar .4s ease forwards;
+    transform-origin:left;
+  }
+  @keyframes fillBar{from{transform:scaleX(0);}to{transform:scaleX(1);}}
+  .step-dot.done{background:var(--copper-dim);}
+  .step-dot.done::after{
+    content:'';
+    position:absolute;
+    inset:0;
+    background:linear-gradient(90deg,var(--copper),#f2c14e);
+    border-radius:3px;
+  }
+
+  .modal-body{padding:26px;}
+
+  .modal-head{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    margin-bottom:20px;
+    gap:12px;
+  }
+  .modal-head-text h3{
+    font-family:'Fraunces',serif;
+    font-size:1.4rem;
+    font-weight:500;
+    letter-spacing:-0.3px;
+    margin-bottom:4px;
+  }
+  .modal-head-text p{
+    font-size:.8rem;
+    color:var(--text-faint);
+    line-height:1.5;
+  }
+  .modal-close-x{
+    background:transparent;
+    border:1px solid var(--line);
+    color:var(--text-dim);
+    width:32px;height:32px;
+    border-radius:50%;
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:.85rem;
+    transition:.15s;
+    flex:none;
+  }
+  .modal-close-x:hover{
+    background:#251616;
+    border-color:#4a2a28;
+    color:var(--rose);
+  }
+
+  .step{
+    display:none;
+    animation:stepIn .35s cubic-bezier(0.16,1,0.3,1);
+  }
+  .step.active{display:block;}
+  @keyframes stepIn{
+    from{opacity:0;transform:translateX(20px);}
+    to{opacity:1;transform:translateX(0);}
+  }
+  .step.slide-back{animation:stepInBack .35s cubic-bezier(0.16,1,0.3,1);}
+  @keyframes stepInBack{
+    from{opacity:0;transform:translateX(-20px);}
+    to{opacity:1;transform:translateX(0);}
+  }
+
+  /* Coin options */
   .coin-option{
-    display:flex;align-items:center;gap:14px;
-    background:var(--panel-2);border:1px solid var(--line);
-    border-radius:12px;padding:14px 16px;margin-bottom:10px;
-    cursor:pointer;transition:.15s;
+    display:flex;
+    align-items:center;
+    gap:14px;
+    background:#161b24;
+    border:1px solid var(--line);
+    border-radius:14px;
+    padding:14px 16px;
+    margin-bottom:10px;
+    cursor:pointer;
+    transition:.2s;
+    position:relative;
+    overflow:hidden;
   }
-  .coin-option:hover{border-color:var(--copper);background:var(--panel);transform:translateY(-1px);}
-  .coin-option img{width:38px;height:38px;border-radius:50%;flex:none;}
-  .coin-option .co-info{flex:1;min-width:0;}
-  .coin-option .co-name{font-weight:600;font-size:.92rem;color:var(--text);}
-  .coin-option .co-sym{font-size:.72rem;color:var(--text-faint);text-transform:uppercase;letter-spacing:.4px;}
-  .coin-option .co-price{text-align:right;font-family:'Fraunces',serif;font-weight:500;font-size:1rem;}
-  .coin-option .co-price small{display:block;font-size:.68rem;font-family:'Inter',sans-serif;font-weight:400;color:var(--text-faint);margin-top:2px;}
-  .modal-close{
-    width:100%;padding:12px;background:transparent;border:1px solid var(--line);
-    color:var(--text-dim);border-radius:10px;font-weight:600;cursor:pointer;
-    margin-top:6px;font-size:.85rem;transition:.15s;
+  .coin-option::before{
+    content:'';
+    position:absolute;
+    left:0;top:0;bottom:0;
+    width:3px;
+    background:var(--copper);
+    transform:scaleY(0);
+    transition:.2s;
   }
-  .modal-close:hover{border-color:var(--copper-dim);color:var(--text);}
+  .coin-option:hover{
+    border-color:var(--copper);
+    background:#1a2029;
+    transform:translateX(3px);
+  }
+  .coin-option:hover::before{transform:scaleY(1);}
+  .coin-option:active{transform:translateX(3px) scale(.98);}
+  .coin-icon{
+    width:42px;height:42px;
+    border-radius:50%;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    flex:none;
+    font-size:1.2rem;
+    overflow:hidden;
+  }
+  .coin-icon img{width:100%;height:100%;object-fit:cover;}
+  .coin-icon.gold{
+    background:linear-gradient(160deg,#d4a94a,#8f6a2f);
+    color:#0a0d12;
+  }
+  .coin-info{flex:1;min-width:0;}
+  .coin-info .co-name{font-weight:600;font-size:.92rem;color:var(--text);letter-spacing:-0.1px;}
+  .coin-info .co-sym{font-size:.72rem;color:var(--text-faint);text-transform:uppercase;letter-spacing:.4px;margin-top:2px;}
+  .coin-arrow{
+    color:var(--text-faint);
+    font-size:.75rem;
+    transition:.2s;
+  }
+  .coin-option:hover .coin-arrow{color:var(--copper);transform:translateX(3px);}
+
+  /* Balance chip */
+  .balance-chip{
+    background:#161b24;
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:12px 16px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:16px;
+  }
+  .balance-chip .bc-label{
+    font-size:.75rem;
+    color:var(--text-faint);
+    text-transform:uppercase;
+    letter-spacing:.8px;
+    font-weight:500;
+  }
+  .balance-chip .bc-value{
+    font-family:'Fraunces',serif;
+    font-size:1.15rem;
+    font-weight:600;
+    color:var(--copper);
+    letter-spacing:-0.3px;
+  }
+
+  /* Amount */
+  .amount-grid{
+    display:grid;
+    grid-template-columns:repeat(2,1fr);
+    gap:10px;
+    margin-bottom:16px;
+  }
+  .amount-btn{
+    padding:16px 12px;
+    background:#161b24;
+    border:1px solid var(--line);
+    border-radius:12px;
+    color:var(--text);
+    font-size:.95rem;
+    font-weight:600;
+    cursor:pointer;
+    transition:.18s;
+    font-family:'Fraunces',serif;
+    letter-spacing:-0.2px;
+  }
+  .amount-btn:hover{
+    border-color:var(--copper-dim);
+    background:#1a2029;
+  }
+  .amount-btn.selected{
+    border-color:var(--copper);
+    background:rgba(201,149,79,0.1);
+    color:var(--copper);
+    box-shadow:0 0 0 3px rgba(201,149,79,0.12);
+  }
+
+  .amount-custom{
+    background:#161b24;
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:14px 16px;
+    color:var(--text);
+    width:100%;
+    font-size:.95rem;
+    font-family:inherit;
+    outline:none;
+    transition:.18s;
+    margin-bottom:16px;
+  }
+  .amount-custom:focus{
+    border-color:var(--copper);
+    box-shadow:0 0 0 3px rgba(201,149,79,0.12);
+  }
+  .amount-custom::placeholder{color:var(--text-faint);}
+
+  .insufficient{
+    background:#2a1a1a;
+    border:1px solid #4a2a28;
+    border-radius:10px;
+    padding:10px 14px;
+    font-size:.78rem;
+    color:var(--rose);
+    margin-bottom:16px;
+    display:none;
+    align-items:center;
+    gap:8px;
+    animation:shake .4s ease;
+  }
+  .insufficient.show{display:flex;}
+  @keyframes shake{
+    0%,100%{transform:translateX(0);}
+    25%{transform:translateX(-5px);}
+    75%{transform:translateX(5px);}
+  }
+
+  /* Summary */
+  .summary{
+    background:#161b24;
+    border:1px solid var(--line);
+    border-radius:14px;
+    padding:18px;
+    margin-bottom:18px;
+  }
+  .summary-row{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:10px 0;
+    border-bottom:1px solid #1e2433;
+    font-size:.85rem;
+    gap:10px;
+  }
+  .summary-row:last-child{border-bottom:none;}
+  .summary-row .s-label{color:var(--text-faint);}
+  .summary-row .s-value{font-weight:600;color:var(--text);text-align:right;}
+  .summary-row.total{
+    border-top:1px solid var(--line);
+    border-bottom:none;
+    padding-top:14px;
+    margin-top:6px;
+    font-size:1rem;
+  }
+  .summary-row.total .s-label{color:var(--text);font-weight:600;}
+  .summary-row.total .s-value{
+    font-family:'Fraunces',serif;
+    font-size:1.3rem;
+    color:var(--copper);
+    letter-spacing:-0.3px;
+  }
+
+  /* Buttons */
+  .modal-actions{
+    display:flex;
+    gap:10px;
+    margin-top:8px;
+  }
+  .m-btn{
+    flex:1;
+    padding:14px 18px;
+    border-radius:12px;
+    font-weight:600;
+    font-size:.88rem;
+    cursor:pointer;
+    transition:.18s;
+    border:1px solid transparent;
+    font-family:inherit;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    gap:8px;
+  }
+  .m-btn-primary{
+    background:linear-gradient(160deg,var(--copper),var(--copper-dim));
+    color:#0a0d12;
+    box-shadow:0 8px 24px -10px rgba(201,149,79,0.55);
+  }
+  .m-btn-primary:hover:not(:disabled){
+    transform:translateY(-2px);
+    box-shadow:0 12px 30px -10px rgba(201,149,79,0.75);
+  }
+  .m-btn-primary:disabled{
+    opacity:0.4;
+    cursor:not-allowed;
+    transform:none;
+    box-shadow:none;
+  }
+  .m-btn-ghost{
+    background:transparent;
+    border-color:var(--line);
+    color:var(--text-dim);
+  }
+  .m-btn-ghost:hover{
+    border-color:var(--copper-dim);
+    color:var(--text);
+  }
+
+  /* Processing */
+  .processing-wrap{
+    text-align:center;
+    padding:40px 20px 30px;
+  }
+  .spinner{
+    width:64px;
+    height:64px;
+    margin:0 auto 24px;
+    border-radius:50%;
+    border:3px solid rgba(201,149,79,0.15);
+    border-top-color:var(--copper);
+    animation:spin 1s linear infinite;
+    position:relative;
+  }
+  .spinner::after{
+    content:'';
+    position:absolute;
+    inset:8px;
+    border-radius:50%;
+    border:2px solid transparent;
+    border-top-color:#f2c14e;
+    animation:spin 0.8s linear infinite reverse;
+  }
+  @keyframes spin{to{transform:rotate(360deg);}}
+  .processing-wrap h3{
+    font-family:'Fraunces',serif;
+    font-size:1.2rem;
+    margin-bottom:8px;
+  }
+  .processing-wrap p{
+    font-size:.85rem;
+    color:var(--text-faint);
+    line-height:1.55;
+  }
+
+  /* Success */
+  .success-wrap{
+    text-align:center;
+    padding:30px 20px 20px;
+  }
+  .check-circle{
+    width:88px;
+    height:88px;
+    margin:0 auto 22px;
+    border-radius:50%;
+    background:linear-gradient(160deg,rgba(63,185,143,0.15),rgba(63,185,143,0.05));
+    border:2px solid var(--teal);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    position:relative;
+    animation:popIn .5s cubic-bezier(0.16,1,0.3,1);
+  }
+  @keyframes popIn{
+    0%{transform:scale(0);opacity:0;}
+    60%{transform:scale(1.1);}
+    100%{transform:scale(1);opacity:1;}
+  }
+  .check-circle::before{
+    content:'';
+    position:absolute;
+    inset:-8px;
+    border-radius:50%;
+    border:2px solid rgba(63,185,143,0.3);
+    animation:ripple 1.6s ease-out infinite;
+  }
+  @keyframes ripple{
+    0%{transform:scale(1);opacity:0.6;}
+    100%{transform:scale(1.4);opacity:0;}
+  }
+  .check-svg{width:44px;height:44px;}
+  .check-svg path{
+    stroke:var(--teal);
+    stroke-width:3.5;
+    fill:none;
+    stroke-linecap:round;
+    stroke-linejoin:round;
+    stroke-dasharray:60;
+    stroke-dashoffset:60;
+    animation:drawCheck .6s .25s ease forwards;
+  }
+  @keyframes drawCheck{to{stroke-dashoffset:0;}}
+
+  .success-wrap h3{
+    font-family:'Fraunces',serif;
+    font-size:1.4rem;
+    margin-bottom:8px;
+    letter-spacing:-0.3px;
+  }
+  .success-wrap p{
+    font-size:.85rem;
+    color:var(--text-dim);
+    line-height:1.6;
+    margin-bottom:8px;
+  }
+  .success-wrap .success-amount{
+    font-family:'Fraunces',serif;
+    font-size:1.5rem;
+    color:var(--copper);
+    font-weight:600;
+    letter-spacing:-0.4px;
+    margin:14px 0 6px;
+    animation:countUp .5s .3s ease both;
+  }
+  @keyframes countUp{
+    from{opacity:0;transform:translateY(10px);}
+    to{opacity:1;transform:translateY(0);}
+  }
+  .success-wrap .success-sub{
+    font-size:.72rem;
+    color:var(--text-faint);
+    letter-spacing:.3px;
+  }
+
+  /* Confetti */
+  .confetti{
+    position:absolute;
+    width:6px;
+    height:6px;
+    border-radius:50%;
+    opacity:0;
+    animation:confettiFly 1.4s ease-out forwards;
+  }
+  @keyframes confettiFly{
+    0%{opacity:1;transform:translate(0,0) scale(0);}
+    20%{opacity:1;transform:translate(var(--tx1),var(--ty1)) scale(1);}
+    100%{opacity:0;transform:translate(var(--tx2),var(--ty2)) scale(0.5);}
+  }
 
   @media (max-width:900px){
     .app{grid-template-columns:1fr;}
     .side{display:none;}
+  }
+  @media (max-width:600px){
+    .modal-body{padding:22px 20px;}
+    .step-progress{padding:18px 20px 0;}
   }
 </style>
 </head>
@@ -135,7 +593,7 @@
       <div class="action" id="tradeBtn"><i class="fas fa-repeat"></i><span>Trade</span></div>
     </div>
 
-    <div class="panel-title"><h3>BTC/USDT</h3><span>Live market feed</span></div>
+    <div class="panel-title"><h3>BTC/USD</h3><span>Live market feed</span></div>
     <div class="chart-wrap"><canvas id="priceChart"></canvas></div>
 
     <div class="panel-title"><h3>Holdings</h3><span>Portfolio</span></div>
@@ -165,13 +623,139 @@
 
 <div class="toast" id="toast"></div>
 
-<!-- ========== TRADE MODAL ========== -->
+<!-- ============================================================
+     TRADE MODAL — 4-STEP BALANCE FLOW
+     ============================================================ -->
 <div class="modal-overlay" id="tradeModal">
   <div class="modal">
-    <h3>Buy Crypto</h3>
-    <p class="modal-sub">Choose a coin to buy. $100 will be spent from your available balance.</p>
-    <div id="coinOptions"></div>
-    <button class="modal-close" id="modalClose">Cancel</button>
+
+    <!-- 4 progress dots -->
+    <div class="step-progress">
+      <div class="step-dot active" data-step="1"></div>
+      <div class="step-dot" data-step="2"></div>
+      <div class="step-dot" data-step="3"></div>
+      <div class="step-dot" data-step="4"></div>
+    </div>
+
+    <div class="modal-body">
+
+      <!-- STEP 1: Choose Asset -->
+      <div class="step active" data-step="1">
+        <div class="modal-head">
+          <div class="modal-head-text">
+            <h3>Buy Crypto or Gold</h3>
+            <p>Choose the asset you want to purchase</p>
+          </div>
+          <button class="modal-close-x" id="closeBtn1"><i class="fas fa-times"></i></button>
+        </div>
+        <div id="assetOptions"></div>
+      </div>
+
+      <!-- STEP 2: Choose Amount -->
+      <div class="step" data-step="2">
+        <div class="modal-head">
+          <div class="modal-head-text">
+            <h3>Select Amount</h3>
+            <p id="step2Sub">How much would you like to invest?</p>
+          </div>
+          <button class="modal-close-x" id="closeBtn2"><i class="fas fa-times"></i></button>
+        </div>
+
+        <div class="balance-chip">
+          <span class="bc-label"><i class="fas fa-wallet" style="margin-right:6px;color:var(--copper);"></i>Available Balance</span>
+          <span class="bc-value" id="modalBalance">$0.00</span>
+        </div>
+
+        <div class="amount-grid" id="amountGrid">
+          <button class="amount-btn" data-amt="100">$100</button>
+          <button class="amount-btn" data-amt="250">$250</button>
+          <button class="amount-btn" data-amt="500">$500</button>
+          <button class="amount-btn" data-amt="1000">$1,000</button>
+        </div>
+
+        <input type="number" class="amount-custom" id="customAmount" placeholder="Or enter custom amount (min $50)" min="50" />
+
+        <div class="insufficient" id="insufficientMsg">
+          <i class="fas fa-exclamation-triangle"></i>
+          <span>Amount exceeds your available balance</span>
+        </div>
+
+        <div class="modal-actions">
+          <button class="m-btn m-btn-ghost" data-back="1">Back</button>
+          <button class="m-btn m-btn-primary" id="toStep3" disabled>Continue</button>
+        </div>
+      </div>
+
+      <!-- STEP 3: Confirm -->
+      <div class="step" data-step="3">
+        <div class="modal-head">
+          <div class="modal-head-text">
+            <h3>Confirm Order</h3>
+            <p>Review your order before confirming</p>
+          </div>
+          <button class="modal-close-x" id="closeBtn3"><i class="fas fa-times"></i></button>
+        </div>
+
+        <div class="summary">
+          <div class="summary-row">
+            <span class="s-label">Asset</span>
+            <span class="s-value" id="sumAsset">—</span>
+          </div>
+          <div class="summary-row">
+            <span class="s-label">You Pay</span>
+            <span class="s-value" id="sumAmount">—</span>
+          </div>
+          <div class="summary-row">
+            <span class="s-label">You Receive</span>
+            <span class="s-value" id="sumReceive">—</span>
+          </div>
+          <div class="summary-row">
+            <span class="s-label">Fee</span>
+            <span class="s-value">$0.00</span>
+          </div>
+          <div class="summary-row total">
+            <span class="s-label">Total</span>
+            <span class="s-value" id="sumTotal">—</span>
+          </div>
+        </div>
+
+        <div class="modal-actions">
+          <button class="m-btn m-btn-ghost" data-back="2">Back</button>
+          <button class="m-btn m-btn-primary" id="confirmBtn">
+            <i class="fas fa-check"></i> Confirm Purchase
+          </button>
+        </div>
+      </div>
+
+      <!-- STEP 4a: Processing -->
+      <div class="step" data-step="4a">
+        <div class="processing-wrap">
+          <div class="spinner"></div>
+          <h3>Processing Order…</h3>
+          <p>Please wait while we complete your purchase.<br />Do not close this window.</p>
+        </div>
+      </div>
+
+      <!-- STEP 4b: Success -->
+      <div class="step" data-step="4b">
+        <div class="success-wrap">
+          <div class="check-circle" id="checkCircle">
+            <svg class="check-svg" viewBox="0 0 52 52">
+              <path d="M14 27 L22 35 L38 18" />
+            </svg>
+          </div>
+          <h3>Purchase Successful</h3>
+          <p>Your balance has been updated</p>
+          <div class="success-amount" id="successAmount">—</div>
+          <div class="success-sub" id="successAsset">—</div>
+
+          <button class="m-btn m-btn-primary" id="doneBtn" style="width:100%;margin-top:26px;">
+            <i class="fas fa-check"></i> Back to Dashboard
+          </button>
+        </div>
+      </div>
+
+    </div>
   </div>
 </div>
 
@@ -187,7 +771,7 @@
 
   let session = getSession();
   if(!session || session.status !== 'approved'){
-    window.location.href = 'index.html';
+    window.location.href = 'auth.html';
     return;
   }
 
@@ -196,7 +780,7 @@
   user.balance = user.balance ?? 0;
   user.btc = user.btc ?? 0;
   user.eth = user.eth ?? 0;
-  user.sol = user.sol ?? 0;
+  user.xau = user.xau ?? 0;
 
   function persist(){
     users = getUsers();
@@ -217,49 +801,39 @@
   }
 
   // ============================================================
-  //  COIN ICONS
+  //  ASSETS
   // ============================================================
   const ICONS = {
     BTC: 'https://cdn.jsdelivr.net/gh/spothq/cryptocurrency-icons@master/128/color/btc.png',
-    ETH: 'https://cdn.jsdelivr.net/gh/spothq/cryptocurrency-icons@master/128/color/eth.png',
-    SOL: 'https://cdn.jsdelivr.net/gh/spothq/cryptocurrency-icons@master/128/color/sol.png'
+    ETH: 'https://cdn.jsdelivr.net/gh/spothq/cryptocurrency-icons@master/128/color/eth.png'
   };
 
-  const COIN_NAMES = {
-    BTC: 'Bitcoin',
-    ETH: 'Ethereum',
-    SOL: 'Solana'
-  };
-
-  const COIN_SYMS = {
-    BTC: 'BTC',
-    ETH: 'ETH',
-    SOL: 'SOL'
-  };
-
-  // ============================================================
-  //  MARKET STATE  (simulated prices — used for valuation only)
-  // ============================================================
-  const COIN_BASE = { BTC: 80000, ETH: 3400, SOL: 165 };
-  const COIN_VOL  = { BTC: 0.012, ETH: 0.015, SOL: 0.025 };
+  const ASSETS = [
+    { sym:'BTC', name:'Bitcoin', label:'Crypto', kind:'img',
+      price: 80000, vol: 0.012, holdingKey:'btc', unit:'BTC' },
+    { sym:'ETH', name:'Ethereum', label:'Crypto', kind:'img',
+      price: 3400, vol: 0.015, holdingKey:'eth', unit:'ETH' },
+    { sym:'XAU', name:'Gold Spot', label:'Precious Metal', kind:'gold',
+      price: 2650, vol: 0.008, holdingKey:'xau', unit:'oz' }
+  ];
 
   const market = {};
-  Object.keys(COIN_BASE).forEach(sym=>{
-    market[sym] = {
-      price: COIN_BASE[sym] * (0.98 + Math.random()*0.04),
-      change: (Math.random()*6 - 3),
-      vol: COIN_VOL[sym]
+  ASSETS.forEach(a=>{
+    market[a.sym] = {
+      price: a.price,
+      vol: a.vol,
+      change: (Math.random()*3 - 1.5)
     };
   });
 
   function tickPrices(){
-    Object.keys(market).forEach(sym=>{
-      const s = market[sym];
-      const drift = (Math.random() - 0.5) * s.vol * s.price * 0.06;
-      s.price = Math.max(s.price + drift, 0.0001);
-      s.change += (Math.random() - 0.5) * 0.15;
-      if(s.change > 15)  s.change = 15;
-      if(s.change < -15) s.change = -15;
+    ASSETS.forEach(a=>{
+      const s = market[a.sym];
+      const drift = (Math.random() - 0.5) * s.vol * s.price * 0.05;
+      s.price = Math.max(s.price + drift, 0.01);
+      s.change += (Math.random() - 0.5) * 0.1;
+      if(s.change > 8) s.change = 8;
+      if(s.change < -8) s.change = -8;
     });
     renderAssets();
     renderBalance();
@@ -268,7 +842,7 @@
   const fmt = (n) => '$' + n.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
 
   // ============================================================
-  //  CHART  (pure JS canvas — no API)
+  //  CHART
   // ============================================================
   const canvas = document.getElementById('priceChart');
   const ctx = canvas.getContext('2d');
@@ -295,14 +869,7 @@
     const dpr = window.devicePixelRatio || 1;
     const w = canvas.width, h = canvas.height;
     ctx.clearRect(0,0,w,h);
-
-    if(!chartData.length){
-      ctx.fillStyle = '#5f6b7d';
-      ctx.font = `${13*dpr}px Inter, sans-serif`;
-      ctx.textAlign = 'center';
-      ctx.fillText('Loading chart…', w/2, h/2);
-      return;
-    }
+    if(!chartData.length) return;
 
     const min = Math.min(...chartData);
     const max = Math.max(...chartData);
@@ -362,26 +929,30 @@
   }
 
   // ============================================================
-  //  HOLDINGS TABLE  (Asset + You Own amount + Value)
+  //  HOLDINGS
   // ============================================================
-  const ASSETS = ['BTC','ETH','SOL'];
-  const HOLDING_KEYS = { BTC:'btc', ETH:'eth', SOL:'sol' };
   const assetBody = document.getElementById('assetBody');
+
+  function glyphHTML(a){
+    if(a.kind === 'img'){
+      return `<div class="asset-glyph"><img src="${ICONS[a.sym]}" alt="${a.sym}" onerror="this.style.display='none'"></div>`;
+    }
+    return `<div class="asset-glyph gold">${a.sym}</div>`;
+  }
 
   function renderAssets(){
     assetBody.innerHTML = '';
-    ASSETS.forEach(sym=>{
-      const holding = user[HOLDING_KEYS[sym]] || 0;
-      const holdingValue = holding * market[sym].price;
-
+    ASSETS.forEach(a=>{
+      const holding = user[a.holdingKey] || 0;
+      const holdingValue = holding * market[a.sym].price;
       const tr = document.createElement('tr');
       tr.innerHTML = `
         <td>
           <div class="asset-name-cell">
-            <div class="asset-glyph"><img src="${ICONS[sym]}" alt="${sym}" onerror="this.style.display='none'"></div>
+            ${glyphHTML(a)}
             <div>
-              <div class="asset-name">${COIN_NAMES[sym]}</div>
-              <div class="asset-amt">${holding.toFixed(8)} ${COIN_SYMS[sym]}</div>
+              <div class="asset-name">${a.name}</div>
+              <div class="asset-amt">${holding.toFixed(a.sym === 'XAU' ? 4 : 8)} ${a.unit}</div>
             </div>
           </div>
         </td>
@@ -392,19 +963,25 @@
   }
 
   // ============================================================
-  //  BALANCE / PORTFOLIO VALUE
+  //  BALANCE
   // ============================================================
   let startBalance = null;
-  function renderBalance(){
+  function renderBalance(bump = false){
     const total = (user.balance || 0)
                 + (user.btc || 0) * market.BTC.price
                 + (user.eth || 0) * market.ETH.price
-                + (user.sol || 0) * market.SOL.price;
+                + (user.xau || 0) * market.XAU.price;
 
     if(startBalance === null) startBalance = total || 1;
 
-    document.getElementById('mainBalance').textContent =
-      total.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+    const el = document.getElementById('mainBalance');
+    el.textContent = total.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+    if(bump){
+      el.classList.remove('bump');
+      void el.offsetWidth;
+      el.classList.add('bump');
+    }
+
     document.getElementById('availBalance').textContent = '$' + (user.balance || 0).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
     document.getElementById('btcHeld').textContent = (user.btc || 0).toFixed(4);
 
@@ -430,71 +1007,204 @@
   //  TRADE MODAL
   // ============================================================
   const modal = document.getElementById('tradeModal');
-  const coinOptions = document.getElementById('coinOptions');
+  const stepDots = document.querySelectorAll('.step-dot');
+  const steps = document.querySelectorAll('.step');
+  const assetOptionsEl = document.getElementById('assetOptions');
+  const amountGrid = document.getElementById('amountGrid');
+  const customAmount = document.getElementById('customAmount');
+  const toStep3Btn = document.getElementById('toStep3');
+  const confirmBtn = document.getElementById('confirmBtn');
+  const doneBtn = document.getElementById('doneBtn');
+  const insufficientMsg = document.getElementById('insufficientMsg');
+  const modalBalanceEl = document.getElementById('modalBalance');
 
-  function renderCoinOptions(){
-    coinOptions.innerHTML = ASSETS.map(sym=>{
-      const s = market[sym];
+  let selectedAsset = null;
+  let selectedAmount = 0;
+
+  function renderAssetOptions(){
+    assetOptionsEl.innerHTML = ASSETS.map(a=>{
+      const iconHTML = a.kind === 'img'
+        ? `<img src="${ICONS[a.sym]}" alt="${a.sym}" onerror="this.style.display='none'">`
+        : `<i class="fas fa-coins"></i>`;
       return `
-        <div class="coin-option" data-sym="${sym}">
-          <img src="${ICONS[sym]}" alt="${sym}" onerror="this.style.display='none'">
-          <div class="co-info">
-            <div class="co-name">${COIN_NAMES[sym]}</div>
-            <div class="co-sym">${sym}</div>
+        <div class="coin-option" data-sym="${a.sym}">
+          <div class="coin-icon ${a.kind === 'gold' ? 'gold' : ''}">${iconHTML}</div>
+          <div class="coin-info">
+            <div class="co-name">${a.name}</div>
+            <div class="co-sym">${a.sym} · ${a.label}</div>
           </div>
-          <div class="co-price">
-            ${fmt(s.price)}
-            <small>${s.change>=0?'+':''}${s.change.toFixed(2)}%</small>
-          </div>
+          <i class="fas fa-chevron-right coin-arrow"></i>
         </div>
       `;
     }).join('');
   }
 
-  function openTradeModal(){
-    renderCoinOptions();
+  function goToStep(n, direction = 'forward'){
+    steps.forEach(s=>{
+      s.classList.remove('active', 'slide-back');
+      if(s.dataset.step === String(n)){
+        s.classList.add('active');
+        if(direction === 'back') s.classList.add('slide-back');
+      }
+    });
+
+    const progressStep = String(n).startsWith('4') ? 4 : parseInt(n);
+    stepDots.forEach(d=>{
+      const ds = parseInt(d.dataset.step);
+      d.classList.remove('active', 'done');
+      if(ds < progressStep) d.classList.add('done');
+      if(ds === progressStep) d.classList.add('active');
+    });
+  }
+
+  function openModal(){
+    resetModal();
     modal.classList.add('show');
   }
-  function closeTradeModal(){
+  function closeModal(){
     modal.classList.remove('show');
   }
 
-  document.getElementById('tradeBtn').addEventListener('click', openTradeModal);
-  document.getElementById('modalClose').addEventListener('click', closeTradeModal);
-  modal.addEventListener('click', (e)=>{
-    if(e.target === modal) closeTradeModal();
+  function resetModal(){
+    selectedAsset = null;
+    selectedAmount = 0;
+    customAmount.value = '';
+    document.querySelectorAll('.amount-btn').forEach(b=>b.classList.remove('selected'));
+    toStep3Btn.disabled = true;
+    insufficientMsg.classList.remove('show');
+    goToStep(1);
+  }
+
+  ['closeBtn1','closeBtn2','closeBtn3'].forEach(id=>{
+    const el = document.getElementById(id);
+    if(el) el.addEventListener('click', closeModal);
+  });
+  modal.addEventListener('click', (e)=>{ if(e.target === modal) closeModal(); });
+
+  document.querySelectorAll('[data-back]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      goToStep(btn.dataset.back, 'back');
+    });
   });
 
-  coinOptions.addEventListener('click', (e)=>{
+  assetOptionsEl.addEventListener('click', (e)=>{
     const opt = e.target.closest('.coin-option');
     if(!opt) return;
-    buyCoin(opt.dataset.sym);
+    const sym = opt.dataset.sym;
+    selectedAsset = ASSETS.find(a => a.sym === sym);
+    document.getElementById('step2Sub').textContent = `How much would you like to invest in ${selectedAsset.name}?`;
+    modalBalanceEl.textContent = fmt(user.balance || 0);
+    goToStep(2);
   });
 
-  function buyCoin(sym){
-    const spend = 100;
-    if((user.balance || 0) < spend){
-      toast('❌ Not enough balance to place a trade');
+  function validateAmount(){
+    if(!selectedAmount || selectedAmount < 50){
+      toStep3Btn.disabled = true;
+      insufficientMsg.classList.remove('show');
       return;
     }
-    const price = market[sym].price;
-    if(!price){ toast('⏳ Waiting on live price…'); return; }
-
-    const amount = spend / price;
-    user.balance -= spend;
-
-    if(sym === 'BTC') user.btc += amount;
-    if(sym === 'ETH') user.eth += amount;
-    if(sym === 'SOL') user.sol += amount;
-
-    persist();
-    renderBalance();
-    renderAssets();
-
-    pushLog(`Bought ${amount.toFixed(6)} ${sym}`);
-    toast(`📈 Bought ${amount.toFixed(6)} ${sym}`);
-    closeTradeModal();
+    if(selectedAmount > (user.balance || 0)){
+      toStep3Btn.disabled = true;
+      insufficientMsg.classList.add('show');
+      return;
+    }
+    insufficientMsg.classList.remove('show');
+    toStep3Btn.disabled = false;
   }
+
+  amountGrid.addEventListener('click', (e)=>{
+    const btn = e.target.closest('.amount-btn');
+    if(!btn) return;
+    document.querySelectorAll('.amount-btn').forEach(b=>b.classList.remove('selected'));
+    btn.classList.add('selected');
+    selectedAmount = parseFloat(btn.dataset.amt);
+    customAmount.value = '';
+    validateAmount();
+  });
+
+  customAmount.addEventListener('input', ()=>{
+    const val = parseFloat(customAmount.value);
+    document.querySelectorAll('.amount-btn').forEach(b=>b.classList.remove('selected'));
+    selectedAmount = (!isNaN(val) && val > 0) ? val : 0;
+    validateAmount();
+  });
+
+  toStep3Btn.addEventListener('click', ()=>{
+    if(!selectedAmount || !selectedAsset) return;
+    const price = market[selectedAsset.sym].price;
+    const qty = selectedAmount / price;
+    const qtyStr = qty.toFixed(selectedAsset.sym === 'XAU' ? 4 : 6);
+
+    document.getElementById('sumAsset').textContent = `${selectedAsset.name} (${selectedAsset.sym})`;
+    document.getElementById('sumAmount').textContent = '$' + selectedAmount.toLocaleString();
+    document.getElementById('sumReceive').textContent = `${qtyStr} ${selectedAsset.unit}`;
+    document.getElementById('sumTotal').textContent = '$' + selectedAmount.toLocaleString();
+    goToStep(3);
+  });
+
+  confirmBtn.addEventListener('click', ()=>{
+    if(!selectedAsset || !selectedAmount) return;
+
+    if((user.balance || 0) < selectedAmount){
+      goToStep(2);
+      insufficientMsg.classList.add('show');
+      toast('❌ Not enough balance');
+      return;
+    }
+
+    goToStep('4a');
+
+    setTimeout(()=>{
+      const price = market[selectedAsset.sym].price;
+      const qty = selectedAmount / price;
+
+      user.balance -= selectedAmount;
+      user[selectedAsset.holdingKey] += qty;
+
+      persist();
+      renderBalance(true);
+      renderAssets();
+
+      const qtyStr = qty.toFixed(selectedAsset.sym === 'XAU' ? 4 : 6);
+      pushLog(`Bought ${qtyStr} ${selectedAsset.unit} of ${selectedAsset.sym}`);
+
+      document.getElementById('successAmount').textContent = `${qtyStr} ${selectedAsset.unit}`;
+      document.getElementById('successAsset').textContent =
+        `of ${selectedAsset.name} · $${selectedAmount.toLocaleString()} paid`;
+
+      goToStep('4b');
+      triggerConfetti();
+    }, 2000);
+  });
+
+  doneBtn.addEventListener('click', ()=>{
+    closeModal();
+  });
+
+  function triggerConfetti(){
+    const circle = document.getElementById('checkCircle');
+    const colors = ['#c9954f', '#f2c14e', '#3fb98f', '#6ea8fe', '#d9705f'];
+    circle.querySelectorAll('.confetti').forEach(c=>c.remove());
+
+    for(let i=0; i<14; i++){
+      const dot = document.createElement('span');
+      dot.className = 'confetti';
+      const angle = (i / 14) * Math.PI * 2;
+      const dist1 = 40 + Math.random() * 20;
+      const dist2 = 80 + Math.random() * 60;
+      dot.style.setProperty('--tx1', Math.cos(angle) * dist1 + 'px');
+      dot.style.setProperty('--ty1', Math.sin(angle) * dist1 + 'px');
+      dot.style.setProperty('--tx2', Math.cos(angle) * dist2 + 'px');
+      dot.style.setProperty('--ty2', Math.sin(angle) * dist2 + 'px');
+      dot.style.background = colors[i % colors.length];
+      dot.style.left = '50%';
+      dot.style.top = '50%';
+      dot.style.animationDelay = (Math.random() * 0.2) + 's';
+      circle.appendChild(dot);
+    }
+  }
+
+  document.getElementById('tradeBtn').addEventListener('click', openModal);
 
   // ============================================================
   //  LOGOUT
@@ -520,6 +1230,7 @@
   resizeCanvas();
   drawChart();
 
+  renderAssetOptions();
   renderAssets();
   renderBalance();
   pushLog('Session started');
