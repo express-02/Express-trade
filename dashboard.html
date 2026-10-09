@@ -90,6 +90,15 @@
   .percent-btn.active{border-color:var(--copper);background:rgba(201,149,79,0.1);color:var(--copper);}
   .t-avail{font-size:.75rem;color:var(--text-faint);display:flex;justify-content:space-between;margin-top:6px;padding:0 4px;}
   .t-avail strong{color:var(--copper);font-family:monospace;}
+
+  /* ---- DURATION PICKER ---- */
+  .field-label{font-size:.72rem;color:var(--text-faint);text-transform:uppercase;letter-spacing:.8px;font-weight:600;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;}
+  .field-label .payout-hint{color:var(--copper);font-weight:700;}
+  .duration-btns{display:flex;gap:6px;flex-wrap:wrap;}
+  .duration-btn{background:#161b24;border:1px solid var(--line);color:var(--text-dim);padding:8px 14px;border-radius:20px;font-size:.75rem;font-weight:600;cursor:pointer;transition:.15s;font-family:inherit;}
+  .duration-btn:hover{border-color:var(--copper-dim);color:var(--text);}
+  .duration-btn.active{border-color:var(--copper);background:rgba(201,149,79,0.1);color:var(--copper);}
+
   .t-value-info{background:rgba(201,149,79,0.06);border:1px solid rgba(201,149,79,0.18);border-radius:10px;padding:10px 14px;display:flex;justify-content:space-between;align-items:center;font-size:.8rem;color:var(--text-dim);margin-top:8px;}
   .t-value-info strong{color:var(--copper);font-family:'Fraunces',serif;font-size:1rem;font-weight:600;}
   .trade-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px;}
@@ -232,16 +241,7 @@
 
   #tradeFlash{position:fixed;inset:0;pointer-events:none;z-index:2000;display:none;align-items:center;justify-content:center;}
   #tradeFlash.show{display:flex;}
-  .flash-text{
-    font-family:'Fraunces',serif;
-    font-weight:700;
-    font-size:clamp(3.5rem, 14vw, 8rem);
-    letter-spacing:4px;
-    text-transform:uppercase;
-    opacity:0;
-    animation:flashPop 1.6s cubic-bezier(0.16,1,0.3,1) forwards;
-    text-shadow:0 8px 40px rgba(0,0,0,0.5);
-  }
+  .flash-text{font-family:'Fraunces',serif;font-weight:700;font-size:clamp(3.5rem, 14vw, 8rem);letter-spacing:4px;text-transform:uppercase;opacity:0;animation:flashPop 1.6s cubic-bezier(0.16,1,0.3,1) forwards;text-shadow:0 8px 40px rgba(0,0,0,0.5);}
   .flash-text.buy,.flash-text.win{color:#3fb98f;}
   .flash-text.sell,.flash-text.loss{color:#d9705f;}
   @keyframes flashPop{
@@ -251,18 +251,7 @@
     75%{opacity:1;transform:scale(1);}
     100%{opacity:0;transform:scale(1.4);}
   }
-  .flash-sub{
-    position:absolute;
-    top:calc(50% + 60px);
-    font-family:'Inter',sans-serif;
-    font-size:.95rem;
-    font-weight:600;
-    color:var(--text-dim);
-    letter-spacing:2px;
-    text-transform:uppercase;
-    opacity:0;
-    animation:flashSubIn 1.6s ease forwards;
-  }
+  .flash-sub{position:absolute;top:calc(50% + 60px);font-family:'Inter',sans-serif;font-size:.95rem;font-weight:600;color:var(--text-dim);letter-spacing:2px;text-transform:uppercase;opacity:0;animation:flashSubIn 1.6s ease forwards;}
   @keyframes flashSubIn{
     0%,20%{opacity:0;transform:translateY(10px);}
     40%,70%{opacity:1;transform:translateY(0);}
@@ -350,6 +339,23 @@
           <button class="percent-btn" data-pct="0.75">75%</button>
           <button class="percent-btn" data-pct="1">100%</button>
         </div>
+
+        <!-- DURATION PICKER -->
+        <div>
+          <div class="field-label">
+            <span>Duration</span>
+            <span class="payout-hint" id="payoutHint">Payout 2.0×</span>
+          </div>
+          <div class="duration-btns" id="durationBtns">
+            <button class="duration-btn" data-dur="60000" data-label="1m" data-mult="1.5">1 min</button>
+            <button class="duration-btn active" data-dur="300000" data-label="5m" data-mult="2">5 min</button>
+            <button class="duration-btn" data-dur="900000" data-label="15m" data-mult="2.5">15 min</button>
+            <button class="duration-btn" data-dur="3600000" data-label="1h" data-mult="3">1 hour</button>
+            <button class="duration-btn" data-dur="14400000" data-label="4h" data-mult="4">4 hours</button>
+            <button class="duration-btn" data-dur="86400000" data-label="1d" data-mult="5">1 day</button>
+          </div>
+        </div>
+
         <div class="t-value-info">
           <span>Trade value</span>
           <strong id="tradeValueBig">$0.00</strong>
@@ -358,7 +364,7 @@
           <button class="big-btn buy" id="buyTradeBtn" disabled><i class="fas fa-arrow-trend-up"></i> BUY</button>
           <button class="big-btn sell" id="sellTradeBtn" disabled><i class="fas fa-arrow-trend-down"></i> SELL</button>
         </div>
-        <div class="trade-note">Wins pay <strong style="color:var(--copper);">2×</strong> your stake · Auto-closes after 2 minutes or on ±target</div>
+        <div class="trade-note">Auto-closes at expiry · Or early at ±target · <span id="noteDur">5 min</span> trade</div>
       </div>
     </div>
 
@@ -467,8 +473,8 @@
         <div class="summary-row"><span class="s-label">Amount</span><span class="s-value" id="ctAmount">—</span></div>
         <div class="summary-row"><span class="s-label">Entry Price</span><span class="s-value" id="ctEntry">—</span></div>
         <div class="summary-row"><span class="s-label">Stake Value</span><span class="s-value" id="ctValue">—</span></div>
-        <div class="summary-row"><span class="s-label">Duration</span><span class="s-value">2 minutes</span></div>
-        <div class="summary-row total"><span class="s-label">Potential Payout (2×)</span><span class="s-value" id="ctPayout">—</span></div>
+        <div class="summary-row"><span class="s-label">Duration</span><span class="s-value" id="ctDuration">—</span></div>
+        <div class="summary-row total"><span class="s-label">Potential Payout</span><span class="s-value" id="ctPayout">—</span></div>
       </div>
       <div class="modal-actions">
         <button class="m-btn m-btn-ghost" id="ctCancel">Cancel</button>
@@ -526,6 +532,17 @@ let unsubTrades = null;
 let openTrades = [];
 let lastBalance = null;
 
+// ⏱️ DURATION + PAYOUT CONFIG
+const DURATIONS = [
+  { ms: 60000,    label: '1m',  mult: 1.5, note: '1 minute'  },
+  { ms: 300000,   label: '5m',  mult: 2,   note: '5 minutes' },
+  { ms: 900000,   label: '15m', mult: 2.5, note: '15 minutes'},
+  { ms: 3600000,  label: '1h',  mult: 3,   note: '1 hour'    },
+  { ms: 14400000, label: '4h',  mult: 4,   note: '4 hours'   },
+  { ms: 86400000, label: '1d',  mult: 5,   note: '1 day'     }
+];
+let selectedDuration = DURATIONS[1]; // default: 5 min
+
 const ASSETS = [
   { sym:'BTC', name:'Bitcoin', label:'Crypto', kind:'img', price:80000, vol:0.012, holdingKey:'btc', unit:'BTC', icon:'https://cdn.jsdelivr.net/gh/spothq/cryptocurrency-icons@master/128/color/btc.png' },
   { sym:'ETH', name:'Ethereum', label:'Crypto', kind:'img', price:3400, vol:0.015, holdingKey:'eth', unit:'ETH', icon:'https://cdn.jsdelivr.net/gh/spothq/cryptocurrency-icons@master/128/color/eth.png' },
@@ -536,6 +553,20 @@ ASSETS.forEach(a=>{ market[a.sym] = { price:a.price, vol:a.vol, change:(Math.ran
 
 const fmt = (n)=> '$' + (n||0).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
 const fmtCoin = (n, sym)=> (n||0).toFixed(sym === 'XAU' ? 4 : 8);
+
+// Format remaining time: "2d 3h left", "1h 15m left", "45s left"
+function formatRemaining(ms){
+  if(ms <= 0) return '0s left';
+  const s = Math.floor(ms / 1000);
+  const d = Math.floor(s / 86400);
+  const h = Math.floor((s % 86400) / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  const sec = s % 60;
+  if(d > 0) return `${d}d ${h}h left`;
+  if(h > 0) return `${h}h ${m}m left`;
+  if(m > 0) return `${m}m ${sec}s left`;
+  return `${sec}s left`;
+}
 
 const drawer = document.getElementById('drawer');
 const backdrop = document.getElementById('drawerBackdrop');
@@ -735,6 +766,9 @@ const tradeValueBig = document.getElementById('tradeValueBig');
 const buyTradeBtn = document.getElementById('buyTradeBtn');
 const sellTradeBtn = document.getElementById('sellTradeBtn');
 const percentBtns = document.querySelectorAll('#percentBtns .percent-btn');
+const durationBtns = document.querySelectorAll('#durationBtns .duration-btn');
+const payoutHint = document.getElementById('payoutHint');
+const noteDur = document.getElementById('noteDur');
 
 function renderAssetTabs(){
   assetTabsEl.innerHTML = ASSETS.map(a=>{
@@ -755,6 +789,17 @@ assetTabsEl.addEventListener('click', e=>{
   tradeAmountEl.value = '';
   percentBtns.forEach(b=>b.classList.remove('active'));
   updateAvailForSelectedAsset();
+});
+
+// ⏱️ Duration picker
+durationBtns.forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    durationBtns.forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    selectedDuration = DURATIONS.find(d => d.ms === parseInt(btn.dataset.dur));
+    payoutHint.textContent = `Payout ${selectedDuration.mult}×`;
+    noteDur.textContent = selectedDuration.note;
+  });
 });
 
 function updateAvailForSelectedAsset(){
@@ -801,14 +846,18 @@ function openConfirmTrade(direction){
   if(!(amt > 0) || amt > coins + 1e-12){ toast('❌ Not enough coins'); return; }
   const entry = market[a.sym].price;
   const stakeValue = amt * entry;
-  pendingTrade = { asset: a.sym, direction, amount: amt, entryPrice: entry, stakeValue };
+  pendingTrade = {
+    asset: a.sym, direction, amount: amt, entryPrice: entry, stakeValue,
+    durationMs: selectedDuration.ms, durationLabel: selectedDuration.note, mult: selectedDuration.mult
+  };
   document.getElementById('ctTitle').textContent = direction === 'BUY' ? 'Buy Trade' : 'Sell Trade';
   document.getElementById('ctAsset').textContent = `${a.name} (${a.sym})`;
   document.getElementById('ctDir').innerHTML = `<span style="color:${direction==='BUY'?'var(--teal)':'var(--rose)'};font-weight:700;">${direction}</span>`;
   document.getElementById('ctAmount').textContent = `${fmtCoin(amt, a.sym)} ${a.unit}`;
   document.getElementById('ctEntry').textContent = fmt(entry);
   document.getElementById('ctValue').textContent = fmt(stakeValue);
-  document.getElementById('ctPayout').textContent = fmt(stakeValue * 2);
+  document.getElementById('ctDuration').textContent = selectedDuration.note;
+  document.getElementById('ctPayout').textContent = fmt(stakeValue * selectedDuration.mult);
   ctModal.classList.add('show');
 }
 buyTradeBtn.addEventListener('click', ()=> openConfirmTrade('BUY'));
@@ -824,7 +873,7 @@ document.getElementById('ctConfirm').addEventListener('click', async ()=>{
   const btn = document.getElementById('ctConfirm');
   btn.disabled = true; btn.textContent = 'Placing…';
   try {
-    const expiresAt = new Date(Date.now() + 120000);
+    const expiresAt = new Date(Date.now() + pendingTrade.durationMs);
     const key = ASSETS.find(x=>x.sym===pendingTrade.asset).holdingKey;
     await db.collection('trades').add({
       uid: currentUser.uid, email: currentUser.email, name: currentUserData.name || 'Trader',
@@ -832,14 +881,17 @@ document.getElementById('ctConfirm').addEventListener('click', async ()=>{
       amount: pendingTrade.amount, entryPrice: pendingTrade.entryPrice,
       stakeValue: pendingTrade.stakeValue, status: 'open', payout: 0,
       willWin: Math.random() < 0.65,
+      durationMs: pendingTrade.durationMs,
+      durationLabel: pendingTrade.durationLabel,
+      payoutMultiplier: pendingTrade.mult,
       expiresAt: firebase.firestore.Timestamp.fromDate(expiresAt),
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
     });
     const update = {}; update[key] = firebase.firestore.FieldValue.increment(-pendingTrade.amount);
     await db.collection('users').doc(currentUser.uid).update(update);
-    pushLog(`${pendingTrade.direction} ${fmtCoin(pendingTrade.amount, pendingTrade.asset)} ${pendingTrade.asset}`);
+    pushLog(`${pendingTrade.direction} ${fmtCoin(pendingTrade.amount, pendingTrade.asset)} ${pendingTrade.asset} · ${pendingTrade.durationLabel}`);
     toast(`✅ ${pendingTrade.direction} placed`);
-    fireTradeFlash(pendingTrade.direction, `${fmtCoin(pendingTrade.amount, pendingTrade.asset)} ${pendingTrade.asset} · ${fmt(pendingTrade.stakeValue)}`);
+    fireTradeFlash(pendingTrade.direction, `${fmtCoin(pendingTrade.amount, pendingTrade.asset)} ${pendingTrade.asset} · ${pendingTrade.durationLabel}`);
     closeCt();
     tradeAmountEl.value = '';
     percentBtns.forEach(b=>b.classList.remove('active'));
@@ -875,6 +927,7 @@ async function checkTradeClose(){
         : (t.direction === 'BUY' ? t.entryPrice * 0.95 : t.entryPrice * 1.05);
 
       const finalPnlPct = outcome === 'win' ? 50 : -100;
+      const mult = t.payoutMultiplier || 2;
       const key = a.holdingKey;
       try {
         await db.runTransaction(async (tx)=>{
@@ -884,7 +937,9 @@ async function checkTradeClose(){
           const updates = {};
           updates[key] = firebase.firestore.FieldValue.increment(t.amount);
           if(outcome === 'win'){
-            updates.balance = firebase.firestore.FieldValue.increment(t.stakeValue);
+            // Profit = stake × (mult - 1). Coins are also returned.
+            const profit = t.stakeValue * (mult - 1);
+            updates.balance = firebase.firestore.FieldValue.increment(profit);
           }
           tx.update(userRef, updates);
           const tradeRef = db.collection('trades').doc(t.id);
@@ -892,13 +947,14 @@ async function checkTradeClose(){
             status: outcome,
             closedAt: firebase.firestore.FieldValue.serverTimestamp(),
             exitPrice: finalExit,
-            payout: outcome === 'win' ? t.stakeValue * 2 : 0,
+            payout: outcome === 'win' ? t.stakeValue * mult : 0,
             pnlPct: finalPnlPct
           });
         });
+        const profit = outcome === 'win' ? t.stakeValue * (mult - 1) : 0;
         pushLog(`${outcome === 'win' ? '✅ Won' : '❌ Lost'} ${t.asset} (${fmtCoin(t.amount, t.asset)} ${a.unit})`);
-        toast(outcome === 'win' ? `✅ Won! +${fmt(t.stakeValue)}` : `❌ Lost ${fmt(t.stakeValue)}`);
-        if(outcome === 'win') fireTradeFlash('WIN', `+${fmt(t.stakeValue)}`);
+        toast(outcome === 'win' ? `✅ Won! +${fmt(profit)}` : `❌ Lost ${fmt(t.stakeValue)}`);
+        if(outcome === 'win') fireTradeFlash('WIN', `+${fmt(profit)}`);
         else fireTradeFlash('LOSS', `-${fmt(t.stakeValue)}`);
       } catch(e){ console.error('Close failed', e); }
     }
@@ -923,7 +979,8 @@ function renderOpenTrades(){
     const isUp = pnlDollar >= 0;
     const expiresAt = t.expiresAt?.toMillis ? t.expiresAt.toMillis() : 0;
     const remaining = Math.max(0, expiresAt - now);
-    const progress = Math.min(100, ((120000 - remaining) / 120000) * 100);
+    const totalMs = t.durationMs || 120000;
+    const progress = Math.min(100, ((totalMs - remaining) / totalMs) * 100);
     const card = document.createElement('div');
     card.className = 'trade-card';
     card.innerHTML = `
@@ -932,7 +989,7 @@ function renderOpenTrades(){
         <span class="t-dir ${t.direction === 'BUY' ? 'buy' : 'sell'}" style="margin-left:6px;">${t.direction}</span></div>
         <div class="t-pnl ${isUp ? 'up' : 'down'}">${isUp ? '+' : ''}${fmt(pnlDollar)}</div>
       </div>
-      <div class="t-info"><span>Stake: ${fmt(t.stakeValue)}</span><span>${(remaining/1000).toFixed(0)}s left</span></div>
+      <div class="t-info"><span>Stake: ${fmt(t.stakeValue)}</span><span>${formatRemaining(remaining)}</span></div>
       <div class="t-bar"><div class="t-bar-fill" style="width:${progress}%"></div></div>`;
     wrap.appendChild(card);
   });
