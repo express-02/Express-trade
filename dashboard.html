@@ -91,7 +91,6 @@
   .t-avail{font-size:.75rem;color:var(--text-faint);display:flex;justify-content:space-between;margin-top:6px;padding:0 4px;}
   .t-avail strong{color:var(--copper);font-family:monospace;}
 
-  /* ---- DURATION PICKER ---- */
   .field-label{font-size:.72rem;color:var(--text-faint);text-transform:uppercase;letter-spacing:.8px;font-weight:600;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;}
   .field-label .payout-hint{color:var(--copper);font-weight:700;}
   .duration-btns{display:flex;gap:6px;flex-wrap:wrap;}
@@ -340,7 +339,6 @@
           <button class="percent-btn" data-pct="1">100%</button>
         </div>
 
-        <!-- DURATION PICKER -->
         <div>
           <div class="field-label">
             <span>Duration</span>
@@ -353,6 +351,7 @@
             <button class="duration-btn" data-dur="3600000" data-label="1h" data-mult="3">1 hour</button>
             <button class="duration-btn" data-dur="14400000" data-label="4h" data-mult="4">4 hours</button>
             <button class="duration-btn" data-dur="86400000" data-label="1d" data-mult="5">1 day</button>
+            <button class="duration-btn" data-dur="432000000" data-label="5d" data-mult="6">5 days</button>
           </div>
         </div>
 
@@ -534,12 +533,13 @@ let lastBalance = null;
 
 // ⏱️ DURATION + PAYOUT CONFIG
 const DURATIONS = [
-  { ms: 60000,    label: '1m',  mult: 1.5, note: '1 minute'  },
-  { ms: 300000,   label: '5m',  mult: 2,   note: '5 minutes' },
-  { ms: 900000,   label: '15m', mult: 2.5, note: '15 minutes'},
-  { ms: 3600000,  label: '1h',  mult: 3,   note: '1 hour'    },
-  { ms: 14400000, label: '4h',  mult: 4,   note: '4 hours'   },
-  { ms: 86400000, label: '1d',  mult: 5,   note: '1 day'     }
+  { ms: 60000,     label: '1m',  mult: 1.5, note: '1 minute'   },
+  { ms: 300000,    label: '5m',  mult: 2,   note: '5 minutes'  },
+  { ms: 900000,    label: '15m', mult: 2.5, note: '15 minutes' },
+  { ms: 3600000,   label: '1h',  mult: 3,   note: '1 hour'     },
+  { ms: 14400000,  label: '4h',  mult: 4,   note: '4 hours'    },
+  { ms: 86400000,  label: '1d',  mult: 5,   note: '1 day'      },
+  { ms: 432000000, label: '5d',  mult: 6,   note: '5 days'     }
 ];
 let selectedDuration = DURATIONS[1]; // default: 5 min
 
@@ -554,7 +554,6 @@ ASSETS.forEach(a=>{ market[a.sym] = { price:a.price, vol:a.vol, change:(Math.ran
 const fmt = (n)=> '$' + (n||0).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
 const fmtCoin = (n, sym)=> (n||0).toFixed(sym === 'XAU' ? 4 : 8);
 
-// Format remaining time: "2d 3h left", "1h 15m left", "45s left"
 function formatRemaining(ms){
   if(ms <= 0) return '0s left';
   const s = Math.floor(ms / 1000);
@@ -791,7 +790,6 @@ assetTabsEl.addEventListener('click', e=>{
   updateAvailForSelectedAsset();
 });
 
-// ⏱️ Duration picker
 durationBtns.forEach(btn=>{
   btn.addEventListener('click', ()=>{
     durationBtns.forEach(b=>b.classList.remove('active'));
@@ -937,7 +935,6 @@ async function checkTradeClose(){
           const updates = {};
           updates[key] = firebase.firestore.FieldValue.increment(t.amount);
           if(outcome === 'win'){
-            // Profit = stake × (mult - 1). Coins are also returned.
             const profit = t.stakeValue * (mult - 1);
             updates.balance = firebase.firestore.FieldValue.increment(profit);
           }
